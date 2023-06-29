@@ -1,2 +1,3 @@
-# periodic-mixtures
-Mélanges périodiques
+# Mélanges périodiques
+
+README
