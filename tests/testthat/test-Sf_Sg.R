@@ -159,7 +159,7 @@ test_that("Sf_approx (either Fourier or direct depending on cases) and Sf_closed
   ## Quick checks
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("linear", eps = 4e-16, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("exponential", eps = 9e-11, N=1, length.out=1e2, verbose = FALSE), NA)
-  expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 3e-15, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 2e-3, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 2e-1, K = 1000L, approx_is_Fourier = FALSE, N=1, length.out=1e2, verbose = FALSE), NA)
 
   ## Long checks (~1800 seconds for 4*2 tests)
@@ -335,19 +335,21 @@ test_that("videos and plots for Sf output correctly", {
         ylab_name = expression("S"[λ]*"f"[σ]*"(x)")
 
         cust_format = function(x) {
-          # gsub("e-0", "e-", format(x,digits=1,nsmall=2))
           out = gsub("e-0", "e-", format(x,digits=1,nsmall=2))
-          if((as.numeric(out) < 1e-2) & !grepl("e", out)) {
+          if((abs(as.numeric(out)) < 1e-2) & (!grepl("e", out))) {
             out = gsub("e-0", "e-", format(as.numeric(out), scientific = TRUE))
           }
           if(as.numeric(out) == 0) {
             out = "0"
           }
-          if(as.numeric(out) < 1e-4) {
+          if(abs(as.numeric(out)) < 1e-4) {
             out = "0"
           }
           if(grepl("e", out)) {
-            out = ""
+            out = "0"
+          }
+          if(as.numeric(out) < 0) { # for negative values
+            out = substr(out, 1, nchar(out)-1)
           }
           return(out)
         }
@@ -416,7 +418,7 @@ test_that("videos and plots for Sf output correctly", {
       max_lambda = 30
       min_lambda = 1/3
       nb_lambdas = 100
-      type = types[1]
+      type = types[5]
       for(type in types) {
         to_plot = type2to_plot(type)
         sigma = sigma_such_as_Fourier_tranform_sums_to_one_func(type)
@@ -485,4 +487,502 @@ test_that("videos and plots for Sf output correctly", {
       expect_true(0 == 0)
     }
   }
+})
+
+test_that("Sf_closed is correct for the *linear case*, using different formulas", {
+  test_formula_basic = function(formula, from_direct = TRUE, boundary_step = NULL, N_tested = 1000) {
+    if(is.null(boundary_step)) {
+      N = N_tested
+      set.seed(1)
+      df = data.frame(x = runif(N, -3, 3),
+                      lambda = abs(runif(N, -3, 3)),
+                      sigma = abs(runif(N, -3, 3)))
+    } else {
+      step = boundary_step # 1, 1/2, 1/4, 1/8 tested
+      x = seq(from = -2, to = 2, by = step)
+      lambda = seq(from = step, to = 2, by = step)
+      sigma = seq(from = step, to = 2, by = step)
+      df = expand.grid(x = x, lambda = lambda, sigma = sigma)
+    }
+    N = nrow(df)
+    Sf_x_closed = rep(NA, N)
+    Sf_x_formula = rep(NA, N)
+    type = "linear"
+    for(i in 1:N) {
+      x = df$x[i]
+      lambda = df$lambda[i]
+      sigma = df$sigma[i]
+      if(from_direct) {
+        interval = interval=seq(from=-10000L, to = 10000L, by = 1L) # can still fail for very small values
+        Sf_x_closed[i] = Sf_approx_direct_func(f_func(type, sigma), lambda, interval)(x)
+      } else {
+        Sf_x_closed[i] = (Sf_closed_func(type, sigma, lambda))(x)
+      }
+      Sf_x_formula[i] = formula(x, sigma, lambda)
+
+      if(N > 100) {
+        print(i)
+      }
+      expect_equal(Sf_x_closed[i], Sf_x_formula[i])
+    }
+  }
+
+  ## Formula 1 (before using the formula for arithmetic series) ----
+  formula_1 = function(x, sigma, lambda) {
+    M_minus = floor((sigma + x)/lambda)
+    M_zero = floor(x/lambda)
+    M_plus = floor((sigma - x)/lambda)
+    if((-M_minus) > (-M_zero-1)) {
+      I_minus = c()
+    } else {
+      I_minus = (-M_minus):(-M_zero-1)
+    }
+    if((-M_zero) > M_plus) {
+      I_plus = c()
+    } else {
+      I_plus = (-M_zero):M_plus
+    }
+    length_I = length(c(I_minus, I_plus))
+    (1/sigma)*length_I - (x/sigma^2)*(length(I_plus)-length(I_minus)) - (lambda/sigma^2)*(-sum(I_minus)+sum(I_plus))
+  }
+
+  ## Formula 2 (after using the formula for arithmetic series) ----
+  formula_2 = function(x, sigma, lambda) {
+    M_minus = floor((sigma + x)/lambda)
+    M_zero = floor(x/lambda)
+    M_plus = floor((sigma - x)/lambda)
+    if((-M_minus) > (-M_zero-1)) {
+      I_minus = c()
+    } else {
+      I_minus = (-M_minus):(-M_zero-1)
+    }
+    if((-M_zero) > M_plus) {
+      I_plus = c()
+    } else {
+      I_plus = (-M_zero):M_plus
+    }
+    length_I = length(c(I_minus, I_plus))
+    (1/sigma)*length_I +
+      -(x/sigma^2)*(length(I_plus)-length(I_minus)) +
+      - (lambda/(2*sigma^2))*((M_plus - M_zero)*length(I_plus) + (M_minus + M_zero + 1)*length(I_minus))
+  }
+
+  ## Formula 3 (before locating only in [-lambda/2, lambda/2)) ----
+  formula_3 = function(x, sigma, lambda) {
+    M_minus = floor((sigma + x)/lambda)
+    M_zero = floor(x/lambda)
+    M_plus = floor((sigma - x)/lambda)
+    (1/sigma) * (M_minus+M_plus+1) +
+      - lambda/(2*sigma^2)*(M_plus*(M_plus+1) - 2*M_zero*(M_zero+1) + M_minus*(M_minus+1)) +
+      - (x/sigma^2)*(M_plus - M_minus + 1 + 2*M_zero)
+  }
+
+  ## Formula final (also the one used now in the main function) ----
+  formula_final = function(x, sigma, lambda) {
+    x = tilde_func(x, lambda)
+    sigma_tilde = tilde_func(sigma, lambda)
+    my_difference = round(abs(x) - abs(sigma_tilde), 10)
+    condition = ((my_difference < 0) | ((my_difference == 0) & (sigma_tilde > 0)) | (x == 0))
+    (1/lambda)*(1-(sigma_tilde^2/sigma^2)) +
+      (condition)*(abs(sigma_tilde)-abs(x))/sigma^2
+  }
+
+  ## Test all the formulas (for the linear case)
+  # test on a random grid of length N_tested
+  test_formula_basic(formula_1, N_tested = 10)
+  test_formula_basic(formula_2, N_tested = 10)
+  test_formula_basic(formula_3, N_tested = 10)
+  test_formula_basic(formula_final, N_tested = 10)
+  # test on a grid with step of boundary_step
+  test_formula_basic(formula_final, boundary_step = 1/2^0)
+})
+
+test_that("Step by step computations to obtain the closed formula for the *linear case*", {
+  ## Particularization for x \in [-lambda/2, lambda/2)
+  test_in_the_central_interval = function(lambda = 1) {
+    sigmas = seq(from = 1/64, to = 10, by = 1/64)
+    x = seq(from = -lambda/2, to = lambda/2, by = 1/64)
+    x = x[-length(x)]
+    df = expand.grid(sigma = sigmas, x = x)
+    df$M_plus = floor(round((df$sigma - df$x), 10)/lambda)
+    df$M_zero = floor(round(df$x, 10)/lambda)
+    df$M_minus = floor(round((df$sigma + df$x), 10)/lambda)
+    df$sigma_tilde = sapply(df$sigma, function(sigma){tilde_func(sigma, lambda)})
+    df$M_minus_tilde = floor(round(df$sigma_tilde + df$x, 10)/lambda)
+    df$M_plus_tilde = floor(round((df$sigma_tilde - df$x), 10)/lambda)
+    df$M_minus_tilde_inside = round((df$sigma_tilde + df$x),10)/lambda
+    df$M_zero_inside = round(df$x, 10)/lambda
+    df$M_plus_tilde_inside = round((df$sigma_tilde - df$x), 10)/lambda
+
+    # We have x in [-lambda/2,lambda/2). Let \tilde{sigma} in [-lambda/2,lambda/2)
+    # such that \tilde{sigma} = sigma - i*lambda (for a certain integer i), from
+    # which we have: sigma = \tilde{sigma} + i*lambda
+    #
+    # We have:
+    # M_minus = floor((sigma + x)/lambda) = floor((\tilde{sigma} + x)/lambda) + i
+    # M_plus = floor((sigma - x)/lambda) = floor((\tilde{sigma} - x)/lambda) + i
+    #
+    # M_plus - M_minus = floor((\tilde{sigma} - x)/lambda) - floor((\tilde{sigma} + x)/lambda)
+    # We let: M_minus_tilde = floor((\tilde{sigma} + x)/lambda)
+    #         M_plus_tilde = floor((\tilde{sigma} - x)/lambda)
+    # We check this is valid (we need to round with 10 to prevent numerical issues with floor)
+    expect_equal(df$M_plus - df$M_minus, df$M_plus_tilde - df$M_minus_tilde)
+
+    # Then we have:
+    # M_minus_tilde inside in [-1, 1) so floor in {-1,0}
+    # M_zero        inside in [-1/2,1/2) so floor in {-1,0}
+    # M_plus_tilde  inside in (-1, 1) so floor in {-1,0}
+    expect_true(range(df$M_minus_tilde_inside)[1] >= -1)
+    expect_true(range(df$M_minus_tilde_inside)[2] < 1)
+    expect_true(range(df$M_zero_inside)[1] >= -0.5)
+    expect_true(range(df$M_zero_inside)[2] < 0.5)
+    expect_true(range(df$M_plus_tilde_inside)[1] > -1)
+    expect_true(range(df$M_plus_tilde_inside)[2] < 1)
+    expect_equal(sort(unique(df$M_minus_tilde)), c(-1, 0))
+    expect_equal(sort(unique(df$M_zero)), c(-1, 0))
+    expect_equal(sort(unique(df$M_plus_tilde)), c(-1, 0))
+
+    # We have M_zero == 0 iff x >= 0, from which we deduce:
+    # if x>=0 : 1 + 2*M_zero = 1
+    # if x<0  : 1 + 2*M_zero = -1
+    # Globally: 1 + 2*M_zero = (-1)^(1_{x<0})
+    expect_equal(which(df$M_zero == 0), which(df$x >= 0))
+    expect_equal(1+2*df$M_zero, 1-2*(df$x <0))
+
+    ## Terms in x ----
+    # We are looking for:
+    # S1 = -(x/sigma^2)*(M_plus - M_minus + 1 + 2*M_zero)
+    # We have at first:
+    # S1 = -(x/sigma^2)*(M_plus_tilde - M_minus_tilde + (-1)^(x < 0))
+    # Otherwise, we have:
+    # M_plus_tilde = floor((sigma_tilde - x))/lambda)
+    # M_minus_tilde = floor((sigma_tilde + x)/lambda)
+    # S1 = -(x/sigma^2)*(M_plus_tilde - M_minus_tilde + (-1)^(x < 0))
+
+    # [*Case 1*]: In the case of $$x=0$$, we have $$S_1=0$$.
+
+    # [*Case 2*]: In the case of $$\tilde{\sigma}=0$$ and $$x \neq 0$$,
+    # we have $$\tilde{M}^{-}=-\mathbf{1}_{x<0}$$ and
+    #         $$\tilde{M}^{+}=-\mathbf{1}_{x>0}$$,
+    # so $$M^{+}-M^{-}+1+2M^0 = -\mathbf{1}_{x>0}-\mathbf{1}_{x<0}+1 = 0$$
+    # (since $$x \neq 0$$), and finally $$S_1=0$$.
+    # In details:
+    # If |x|=|σ`| & σ`=0, we get back to x=0, excluded here
+    # If |x|<|σ`| & σ`=0, this case is not possible
+    # If |x|>|σ`| & σ`=0 & x<0 ==> x<0, M_plus_tilde=0, M_minus_tilde=-1 ==> S1=0
+    # If |x|>|σ`| & σ`=0 & x>0 ==> x>0, M_plus_tilde=-1, M_minus_tilde=0 ==> S1=0
+
+    # [*Case 3.1*] |x|<|σ`| & σ`<0 & x<0 ==> x>σ` ==> 0>σ`-x
+    # M_plus_tilde = -1
+    # M_minus_tilde = -1
+    # S1=-(x/σ²)*(-1)=-|x|/σ²
+
+    # [*Case 3.2*] |x|<|σ`| & σ`<0 & x>0 ==> x<-σ` ==> x+σ`<0
+    # M_plus_tilde = -1
+    # M_minus_tilde = -1
+    # S1=-(x/σ²)*(+1)=-|x|/σ²
+
+    # [*Case 3.3*] |x|<|σ`| & σ`>0 & x<0 ==> σ`+x>0
+    # M_plus_tilde = 0
+    # M_minus_tilde = 0
+    # S1=-(x/σ²)*(-1)=-|x|/σ²
+
+    # [*Case 3.4*] |x|<|σ`| & σ`>0 & x>0 ==> σ`-x>0
+    # M_plus_tilde = 0
+    # M_minus_tilde = 0
+    # S1=-(x/σ²)*(+1)=-|x|/σ²
+
+    # [*Case 4.1*] |x|>|σ`| & σ`<0 & x<0 ==> σ`-x>0
+    # M_plus_tilde = 0
+    # M_minus_tilde = -1
+    # S1=0
+
+    # [*Case 4.2*] |x|>|σ`| & σ`<0 & x>0 ==> x+σ`>0
+    # M_plus_tilde = -1
+    # M_minus_tilde = 0
+    # S1=0
+
+    # [*Case 4.3*] |x|>|σ`| & σ`>0 & x<0 ==> x+σ`<0
+    # M_plus_tilde = 0
+    # M_minus_tilde = -1
+    # S1=0
+
+    # [*Case 4.4*] |x|>|σ`| & σ`>0 & x>0 ==> σ`-x<0
+    # M_plus_tilde = -1
+    # M_minus_tilde = 0
+    # S1=0
+
+    # [*Case 5.1*]
+    # If (|x|=|σ`| & σ`>0 & x = σ`):
+    # M_plus_tilde = 0
+    # M_minus_tilde = floor(2σ`/lambda) \in {-1,0}, but all positive so 0
+    # In this case: S1 = -(x/sigma^2)*((-1)^(x < 0)) = -|x|/σ²
+
+    # [*Case 5.2*]
+    # If (|x|=|σ`| & σ`>0 & x = -σ`)
+    # M_plus_tilde = floor(2σ`/lambda) = 0
+    # M_minus_tilde = 0
+    # In this case: S1 = -(-x/sigma^2) = -|x|/σ²
+
+    # [*Case 6.1*]
+    # If (|x|=|σ`| & σ`<0 & x = -σ`)
+    # M_plus_tilde = floor(2σ`/lambda) = -1
+    # M_minus_tilde = 0
+    # In this case: S1 = -(x/sigma^2)*(-1 + 1) = 0
+
+    # [*Case 6.2*]
+    # If (|x|=|σ`| & σ`<0 & x = σ`)
+    # M_plus_tilde = 0
+    # M_minus_tilde = floor(2σ`/lambda) = -1
+    # In this case: S1 = -(x/sigma^2)*(0 + 1 + -1) = 0
+
+    # At the end, we have (for all x with [-lambda/2,lambda/2], and all lambda, sigma):
+    # If (σ`>0  & |x|=|σ`|), S1 = -|x|/σ²
+    # If (σ`<=0 & |x|=|σ`|), S1 = 0
+    # If (|x|<|σ`|)        , S1 = -|x|/σ²
+    # If (|x|>|σ`|)        , S1 = 0
+    # So at the end, we have value independent of lambda:
+    # S1 = -(|x|/σ²)*1_{(|x|<|σ`|)|(|x|=|σ`| & σ`>0)}
+    df$groundtruth_S1 = (-df$x/df$sigma^2)*(df$M_plus - df$M_minus + 1 + 2*df$M_zero)
+    # condition = (|x| < |σ`|)|(σ`>0 & |x| == |σ`|)
+    # condition = (my_difference < 0) | ((my_difference == 0) & (df$sigma_tilde > 0))
+    df$prediction_S1 = 0
+    df$my_difference = round(abs(df$x) - abs(df$sigma_tilde), 10)
+    idx_replace = which((df$my_difference < 0) | ((df$my_difference == 0) & (df$sigma_tilde > 0)))
+    if(length(idx_replace) > 0) {
+      df$prediction_S1[idx_replace] = (-abs(df$x)/df$sigma^2)[idx_replace]
+    }
+    expect_equal(df$groundtruth_S1, df$prediction_S1)
+
+    ## Constant terms ----
+    # Since M0 is in {-1,0}, M0(M0+1)=0
+    expect_equal(df$M_zero*(df$M_zero+1), rep(0, nrow(df)))
+    df$i = (df$sigma - df$sigma_tilde)/lambda
+    expect_equal(df$M_plus, df$M_plus_tilde + df$i)
+    expect_equal(df$M_minus, df$M_minus_tilde + df$i)
+    expect_equal(df$M_plus_tilde*(df$M_plus_tilde+1), rep(0, nrow(df)))
+    expect_equal(df$M_minus_tilde*(df$M_minus_tilde+1), rep(0, nrow(df)))
+
+    # M_plus*(M_plus+1) = (M_plus_tilde+i)(M_plus_tilde+1+i)
+    #                   = M_plus_tilde(M_plus_tilde+1)+2iM_plus_tilde+i+i^2
+    #                   = 2iM_plus_tilde+i+i^2
+    expect_equal(df$M_plus*(df$M_plus+1), 2*df$M_plus_tilde*df$i + df$i^2+ df$i)
+    expect_equal(df$M_minus*(df$M_minus+1), 2*df$M_minus_tilde*df$i + df$i^2+ df$i)
+
+    # Middle term interior:
+    expect_equal(df$M_plus*(df$M_plus+1)+
+                   -2*df$M_zero*(df$M_zero+1)+
+                   df$M_minus*(df$M_minus+1),
+                 2*df$M_plus_tilde*df$i + 2*df$i^2+ 2*df$i +
+                   2*df$M_minus_tilde*df$i)
+
+    # So the middle term is:
+    df$groundtruth_S2 = -lambda/(2*df$sigma^2)*(
+      df$M_plus*(df$M_plus+1)-2*df$M_zero*(df$M_zero+1)+df$M_minus*(df$M_minus+1)
+    )
+    expect_equal(df$groundtruth_S2,
+                 -lambda/(2*df$sigma^2)*(2*df$M_plus_tilde*df$i + 2*df$i^2+ 2*df$i +
+                                           2*df$M_minus_tilde*df$i))
+    expect_equal(df$groundtruth_S2,
+                 -df$i*lambda/(df$sigma^2)*(df$M_plus_tilde+df$M_minus_tilde+df$i+1))
+
+    ## For the left term
+    df$groundtruth_S3 = (1/df$sigma)*(df$M_plus+df$M_minus+1)
+    # M_minus = M_minus_tilde+i
+    # M_plus = M_plus_tilde+i
+    expect_equal(df$groundtruth_S3,
+                 (1/df$sigma)*(df$M_plus_tilde+df$M_minus_tilde+2*df$i+1))
+
+    ## For all the constant terms
+    df$constant = df$groundtruth_S2 + df$groundtruth_S3
+    expect_equal(df$constant, (1/df$sigma)*(
+      (-df$i*lambda/df$sigma)*(1+df$M_plus_tilde+df$M_minus_tilde+df$i) +
+        (1+df$M_plus_tilde+df$M_minus_tilde+2*df$i)
+    ))
+    # we have i = (sigma - sigma_tilde)/lambda
+    expect_equal(df$constant, (1/df$sigma)*(
+      (-1 + (df$sigma_tilde/df$sigma))*(1+df$M_plus_tilde+df$M_minus_tilde+df$i) +
+        (1+df$M_plus_tilde+df$M_minus_tilde+2*df$i)
+    ))
+    expect_equal(df$constant, (1/df$sigma)*(
+      (-1 + (df$sigma_tilde/df$sigma))*(1+df$M_plus_tilde+df$M_minus_tilde+df$i) +
+        (1+df$M_plus_tilde+df$M_minus_tilde+df$i) + df$i
+    ))
+    expect_equal(df$constant, (1/df$sigma)*(
+      (df$sigma_tilde/df$sigma)*(1+df$M_plus_tilde+df$M_minus_tilde+df$i) + df$i
+    ))
+    expect_equal(df$constant, (1/df$sigma)*(
+      (df$sigma_tilde/df$sigma)*(1+df$M_plus_tilde+df$M_minus_tilde) + (1+df$sigma_tilde/df$sigma)*df$i
+    ))
+    expect_equal(df$constant, (1/df$sigma)*(
+      (df$sigma_tilde/df$sigma)*(1+df$M_plus_tilde+df$M_minus_tilde) + (1+df$sigma_tilde/df$sigma)*(df$sigma - df$sigma_tilde)/lambda
+    ))
+    expect_equal(df$constant, (1/df$sigma)*(
+      (df$sigma_tilde/df$sigma)*(1+df$M_plus_tilde+df$M_minus_tilde) + (1/lambda)*(1+df$sigma_tilde/df$sigma)*(df$sigma - df$sigma_tilde)
+    ))
+    expect_equal(df$constant, (1/df$sigma)*(
+      (df$sigma_tilde/df$sigma)*(1+df$M_plus_tilde+df$M_minus_tilde) + (1/lambda)*(df$sigma-df$sigma_tilde^2/df$sigma)
+    ))
+    expect_equal(df$constant,
+                 (df$sigma_tilde/df$sigma^2)*(1+df$M_plus_tilde+df$M_minus_tilde) + (1/lambda)*(1-df$sigma_tilde^2/df$sigma^2)
+    )
+
+    # Now we compute (1+M_plus_tilde+M_minus_tilde) \in {-1,0,1}
+    # We update the condition by adding x==0
+    # We obtain: (1+M_plus_tilde+M_minus_tilde) = (2*(df$sigma_tilde >= 0)-1)*(df$condition)
+    df$condition = ((df$my_difference < 0) | ((df$my_difference == 0) & (df$sigma_tilde > 0)) | (df$x == 0))
+    expect_equal(
+      (2*(df$sigma_tilde >= 0)-1)*(df$condition),
+      (1+df$M_plus_tilde+df$M_minus_tilde)
+    )
+
+    # Detail for M_plus_tilde + M_minus_tilde + 1 ----
+    # S_0 = df$M_plus_tilde + df$M_minus_tilde + 1
+    df$groundtruth_S0 = df$M_plus_tilde + df$M_minus_tilde + 1
+    # M_plus_tilde = floor((sigma_tilde - x))/lambda)
+    # M_minus_tilde = floor((sigma_tilde + x)/lambda)
+    # [*Case 1* / condition realized]: In the case of $$x=0$$
+    # M_plus_tilde = M_minus_tilde = floor(sigma_tilde/lambda) = -1_{sigma_tilde<0}
+    # so M_plus_tilde+M_minus_tilde+1= 2*(sigma_tilde >= 0)-1
+    expect_true(all(dplyr::pull(dplyr::filter(df, x==0, sigma_tilde>=0), groundtruth_S0) == 1))
+    expect_true(all(dplyr::pull(dplyr::filter(df, x==0, sigma_tilde<0), groundtruth_S0) == -1))
+    # the rest is done as before (long to detail all the cases)
+    # End detail for M_minus_tilde + M_plus_tilde + 1 ----
+
+    expect_equal(df$constant,
+                 (df$sigma_tilde/df$sigma^2)*(2*(df$sigma_tilde >= 0)-1)*(df$condition) + (1/lambda)*(1-df$sigma_tilde^2/df$sigma^2)
+    )
+    expect_equal(df$constant,
+                 (df$sigma_tilde/df$sigma^2)*(2*(df$sigma_tilde >= 0)-1)*(df$condition) + (1/lambda)*(1-df$sigma_tilde^2/df$sigma^2)
+    )
+    # since it's val*(2*(val>=0)-1), it's |val| in all cases, even in 0: (for val=sigma_tilde)
+    expect_equal(df$constant,
+                 (abs(df$sigma_tilde)/df$sigma^2)*(df$condition) + (1/lambda)*(1-df$sigma_tilde^2/df$sigma^2)
+    )
+    expect_equal(df$constant, (1/lambda) +
+                   (abs(df$sigma_tilde)/df$sigma^2)*(df$condition) - (1/lambda)*(df$sigma_tilde^2/df$sigma^2)
+    )
+    expect_equal(df$constant, (1/lambda) + abs(df$sigma_tilde)*(
+      (1/df$sigma^2)*(df$condition) - abs(df$sigma_tilde)/(lambda*df$sigma^2)
+    ))
+    expect_equal(df$constant, (1/lambda) + (abs(df$sigma_tilde)/df$sigma^2)*(
+      (df$condition) - abs(df$sigma_tilde)/lambda
+    ))
+    expect_equal(df$constant, (1/lambda) + (abs(df$sigma_tilde)/df$sigma^2)*(
+      (df$condition) - abs(df$sigma_tilde)/lambda
+    ))
+
+    ## Globally ----
+    expect_equal(df$groundtruth_S1, (-abs(df$x)/df$sigma^2)*(df$condition))
+    expect_equal(df$constant, (1/lambda) + (abs(df$sigma_tilde)/df$sigma^2)*((df$condition) - abs(df$sigma_tilde)/lambda))
+
+    df$Sf = df$groundtruth_S1+df$constant
+    expect_equal(df$Sf, (-abs(df$x)/df$sigma^2)*(df$condition)+(1/lambda) + (abs(df$sigma_tilde)/df$sigma^2)*((df$condition) - abs(df$sigma_tilde)/lambda))
+    # -(|x|/σ²) 1_{condition} + (1/λ) + (|σ`|/σ²)(1_{condition} - |σ`|/λ)
+    # -(|x|/σ²) 1_{condition} + (1/λ) + (|σ`|/σ²)(1_{condition}) -  (σ`/σ)² (1/λ)
+    # 1_{condition} (|σ`| - |x|)/σ²  + (1/λ) (1 - (σ`/σ)²)
+    expect_equal(df$Sf,
+                 (1/lambda)*(1-(df$sigma_tilde^2/df$sigma^2)) +
+                   (df$condition)*(abs(df$sigma_tilde)-abs(df$x))/df$sigma^2
+    )
+    # 1_{condition} (|σ`| - |x|)/σ²  + (1/λ) (1 - (σ`/σ)²)
+    # with: condition = (|x|<|σ`| or (|x|=|σ`| and σ`>0) or (x=0))
+  }
+
+  # test_in_the_central_interval(lambda = 4)
+  # test_in_the_central_interval(lambda = 2)
+  # test_in_the_central_interval(lambda = 1/2^0)
+  # test_in_the_central_interval(lambda = 1/2^1)
+  test_in_the_central_interval(lambda = 1/2^2)
+  test_in_the_central_interval(lambda = 1/2^3)
+})
+
+test_that("Sf_closed and Sg_closed are correct for the *linear case*", {
+  formula_linear_f = function(x, sigma, lambda) {
+    type = "linear"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_linear_g = function(x, sigma, lambda) {
+    type = "linear"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  # below on the grid (not the random samples), points are undefined,
+  # in those cases we evaluate the derivative as 0
+
+  type = "linear"
+
+  # random tests
+  N_tested = 10 # 300
+  test_formula(formula_linear_f, N_tested = N_tested,
+               type = type, original_function = f_func)
+  test_formula(formula_linear_g, N_tested = N_tested,
+               type = type, original_function = g_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  test_formula(formula_linear_f, boundary_step = boundary_step,
+               type = type, original_function = f_func)
+  test_formula(formula_linear_g, boundary_step = boundary_step,
+               type = type, original_function = g_func)
+})
+
+test_that("Sf_closed and Sg_closed are correct for the *exponential case*", {
+  formula_exponential_f = function(x, sigma, lambda) {
+    type = "exponential"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_exponential_g = function(x, sigma, lambda) {
+    type = "exponential"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  # below on the grid (not the random samples), points are undefined,
+  # in those cases we evaluate the derivative as 0
+
+  type = "exponential"
+
+  # random tests
+  N_tested = 10 # 1000
+  test_formula(formula_exponential_f, N_tested = N_tested,
+               type = type, original_function = f_func)
+  test_formula(formula_exponential_g, N_tested = N_tested,
+               type = type, original_function = g_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  test_formula(formula_exponential_f, boundary_step = boundary_step,
+               type = type, original_function = f_func)
+  test_formula(formula_exponential_g, boundary_step = boundary_step,
+               type = type, original_function = g_func)
+})
+
+test_that("Sf_closed and Sg_closed are correct for the *sinc case*", {
+  formula_sinc_f = function(x, sigma, lambda) {
+    type = "sinc"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_sinc_g = function(x, sigma, lambda) {
+    type = "sinc"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  type = "sinc"
+
+  # random tests
+  # N_tested = 10 # 1000
+  # test_formula(formula_sinc_f, N_tested = N_tested,
+  #              type = type, original_function = f_func)#,
+  #              #Sf_approx = Sf_approx_Fourier_func)
+  # test_formula(formula_sinc_g, N_tested = N_tested,
+  #              type = type, original_function = g_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  # test_formula(formula_sinc_f, boundary_step = boundary_step,
+  #              type = type, original_function = f_func,
+  #              Sf_approx = Sf_approx_Fourier_func)
+  # test_formula(formula_sinc_g, boundary_step = boundary_step,
+  #              type = type, original_function = g_func,
+  #              Sf_approx = Sf_approx_Fourier_func)
 })

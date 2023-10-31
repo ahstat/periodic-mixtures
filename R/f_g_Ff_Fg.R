@@ -54,6 +54,7 @@ f_func = function(type, sigma) {
 g_func = function(type, sigma) {
   if(type == "linear") {
     g = function(x) {
+      # not defined in some points, below it is set to 0 for those points
       -sign(x) * sigma^(-2) * as.numeric(abs(x) <= sigma)
     }
   } else if(type == "exponential") {

@@ -122,96 +122,22 @@ Sf_closed_func = function(type, sigma, lambda) {
     return(NULL)
   } else if(type == "linear") {
     sum_function = function(x) {
-      x = x %% lambda
-      floorminus = floor((sigma - x)/lambda)
-      floorplus = floor((sigma + x)/lambda)
-      y = (1/sigma)*(
-        floorplus*(1 - (-x + lambda*floorplus/2 + lambda/2)/sigma) +
-          (1+floorminus)*(1 - (x + lambda*floorminus/2 + lambda*as.numeric(x>sigma))/sigma)
-      )
-      # x2 = x %% lambda
-      #OK:
-      # y = (1/sigma)*(1 + floor((sigma - x2)/lambda) + floor((sigma + x2)/lambda) -
-      #                  (x2/sigma)*(1+floor((sigma - x2)/lambda) - floor((sigma + x2)/lambda)) -
-      #                  (lambda/sigma)*(1/2)*((floor((sigma + x2)/lambda)*(floor((sigma + x2)/lambda)+1))+(pmax(0, floor((sigma - x2)/lambda))*(pmax(0, floor((sigma - x2)/lambda))+1))))
-
-      # #New:
-      # floorminus = floor((sigma - x2)/lambda)
-      # floorplus = floor((sigma + x2)/lambda)
-      # y = (1/sigma)*(
-      #   1 +
-      #     floorminus +
-      #     floorplus -
-      #     (x2/sigma)*(1+floorminus - floorplus) -
-      #     (lambda/sigma)*
-      #     (
-      #       (floorplus*(floorplus+1))/2 +
-      #         ((as.numeric(x2 > sigma) + floorminus)*(as.numeric(x2 > sigma) + floorminus+1))/2
-      #     )
-      # )
-
-      # #New2:
-      # floorminus = floor((sigma - x2)/lambda)
-      # floorplus = floor((sigma + x2)/lambda)
-      # y = (1/sigma)*(
-      #   1 +
-      #     floorminus +
-      #     floorplus -
-      #     (x2/sigma)*(1+floorminus - floorplus) -
-      #     (lambda/sigma)*
-      #     (
-      #       (floorplus*(floorplus+1))/2 + floorminus*(floorminus+1)/2 +
-      #         as.numeric(x2 > sigma) *(1+floorminus)
-      #         #((as.numeric(x2 > sigma) + floorminus)*(as.numeric(x2 > sigma) + floorminus + 1))/2
-      #     )
-      # )
-
-      # #New3:
-      # floorminus = floor((sigma - x2)/lambda)
-      # floorplus = floor((sigma + x2)/lambda)
-      # y = (1/sigma)*(
-      #   1 +
-      #     floorminus +
-      #     floorplus -
-      #     (x2/sigma)*(1+floorminus - floorplus) -
-      #     (lambda/sigma)*
-      #     (
-      #       (floorplus*(floorplus+1))/2 + floorminus*(floorminus+1)/2 +
-      #         as.numeric(x2 > sigma) *(1+floorminus)
-      #       #((as.numeric(x2 > sigma) + floorminus)*(as.numeric(x2 > sigma) + floorminus + 1))/2
-      #     )
-      # )
-
-      # if(!all(pmax(0, floorminus) == as.numeric(x2 > sigma) + floorminus)) {
-      #   stop("Not pmax ok")
-      # }
-
-      # #New4:
-      # floorminus = floor((sigma - x2)/lambda)
-      # floorplus = floor((sigma + x2)/lambda)
-      # y = (1/sigma^2)*(
-      #   (1+floorminus)*(sigma - x2 - lambda*floorminus/2 - lambda*as.numeric(x2>sigma)) +
-      #     floorplus*(sigma + x2 - lambda*floorplus/2 - lambda/2)
-      # )
-
-      #New5:
-      # floorminus = floor((sigma - x2)/lambda)
-      # floorplus = floor((sigma + x2)/lambda)
-      # y = (1/sigma)*(
-      #   (1+floorminus)*(1 - (x2 + lambda*floorminus/2 + lambda*as.numeric(x2>sigma))/sigma) +
-      #     floorplus*(1 - (-x2 + lambda*floorplus/2 + lambda/2)/sigma)
-      # )
+      x = tilde_func(x, lambda)
+      sigma_tilde = tilde_func(sigma, lambda)
+      my_difference = round(abs(x) - abs(sigma_tilde), 10)
+      condition = ((my_difference < 0) | ((my_difference == 0) & (sigma_tilde > 0)) | (x == 0))
+      y = (1/lambda)*(1-(sigma_tilde^2/sigma^2)) + (condition)*(abs(sigma_tilde)-abs(x))/sigma^2
       return(y)
     }
     return(sum_function)
   } else if(type == "exponential") {
     sum_function = function(x) {
-      x = x %% lambda
-      # (1/(2*sigma)) * (exp(-x/sigma) + 2 * cosh(x/sigma) / (exp(lambda/sigma) - 1))
+      x = tilde_func(x, lambda)
+      C = (lambda/2)*(1/sigma)
       if(any(x/sigma > 709)) {
-        stop("Overflow for the computation, sigma is too small or x is too large")
+         stop("overflow for the computation, sigma is too small or x is too large")
       }
-      (1/(2*sigma)) * (exp(-x/sigma) / (1-exp(-lambda/sigma)) - exp(x/sigma) / (1-exp(lambda/sigma)))
+      (1/(2*sigma))*cosh(C-abs(x)/sigma)/sinh(C)
     }
     return(sum_function)
   } else if(type == "polynomial") {
@@ -219,33 +145,35 @@ Sf_closed_func = function(type, sigma, lambda) {
   } else if(type == "gaussian") {
     return(NULL)
   } else if(type == "sinc") {
+    sum_function = function(x) {
+      if(x == 0) {
+        # continuous in 0 in all cases
+        return((1/lambda)*(2*floor(lambda/(2*pi*sigma))+1))
+      } else {
+        return((1/(lambda*sin(pi*x/lambda)))*sin((2*floor(lambda/(2*pi*sigma))+1)*pi*x/lambda))
+      }
+
+    }
+    return(function(x) {sapply(x, sum_function)})
+
+
+
     # sum_function = function(x) {
-    #   N = floor(lambda / (2*pi*sigma))
-    #   if(N < 1) {
-    #     sum_part = 0
-    #   } else {
-    #     sum_part = sum(cos(2*pi*(1:N)*x/lambda))
+    #   K = floor(lambda/(2*pi*sigma))
+    #   y = pi*x/lambda
+    #   term1 = cos((K+1)*y)
+    #   term2 = sin(K*y)
+    #   term3 = sin(y)
+    #   sum_part = term1 * term2 / term3
+    #   if(sum(is.nan(sum_part)) > 0) {
+    #     sum_part[is.nan(sum_part)] = K # when x small to 0
+    #   }
+    #   if(sum(is.na(sum_part)) > 0) {
+    #     sum_part[is.na(sum_part)] = K
     #   }
     #   (1/lambda) + (2/lambda) * sum_part
     # }
     # return(function(x) {sapply(x, sum_function)})
-
-    sum_function = function(x) {
-      K = floor(lambda/(2*pi*sigma))
-      y = pi*x/lambda
-      term1 = cos((K+1)*y)
-      term2 = sin(K*y)
-      term3 = sin(y)
-      sum_part = term1 * term2 / term3
-      if(sum(is.nan(sum_part)) > 0) {
-        sum_part[is.nan(sum_part)] = K # when x small to 0
-      }
-      if(sum(is.na(sum_part)) > 0) {
-        sum_part[is.na(sum_part)] = K
-      }
-      (1/lambda) + (2/lambda) * sum_part
-    }
-    return(function(x) {sapply(x, sum_function)})
   } else {
     return(NULL)
   }
@@ -267,14 +195,26 @@ Sg_closed_func = function(type, sigma, lambda) {
     return(NULL)
   } else if(type == "linear") {
     sum_function = function(x) {
-      x = x %% lambda
-      (-1/sigma^2) * (1 + floor((sigma-x)/lambda) - floor((sigma+x)/lambda))
+      # the real Sg function is not defined in some points,
+      # below it is set to 0 for those points, as for g_func
+      x = tilde_func(x, lambda)
+      sigma_tilde = tilde_func(sigma, lambda)
+      my_difference = round(abs(x) - abs(sigma_tilde), 10)
+      # we use the same condition as before for convenience
+      condition = ((my_difference < 0) | ((my_difference == 0) & (sigma_tilde > 0)) | (x == 0))
+      -condition*sign(x)/sigma^2
     }
     return(sum_function)
   } else if(type == "exponential") {
     sum_function = function(x) {
-      x = x %% lambda
-      -(1/(2*sigma^2)) * (exp(-x/sigma) / (1-exp(-lambda/sigma)) + exp(x/sigma) / (1-exp(lambda/sigma)))
+      x = tilde_func(x, lambda)
+      C = (lambda/2)*(1/sigma)
+      if(any(x/sigma > 709)) {
+        stop("overflow for the computation, sigma is too small or x is too large")
+      }
+      # the real Sg function is not defined in some points,
+      # below it is set to 0 for those points, as for g_func
+      (1/2)*(-sign(x)/sigma^2)*sinh(C-abs(x)/sigma)/sinh(C)
     }
     return(sum_function)
   } else if(type == "polynomial") {
