@@ -98,19 +98,19 @@ test_formula = function(formula, type = "linear", original_function = f_func,
     df = expand.grid(x = x, lambda = lambda, sigma = sigma)
   }
   N = nrow(df)
-  Sf_x_closed = rep(NA, N)
+  Sf_x_approx = rep(NA, N)
   Sf_x_formula = rep(NA, N)
   for(i in 1:N) {
     x = df$x[i]
     lambda = df$lambda[i]
     sigma = df$sigma[i]
-    interval = interval=seq(from=-10000L, to = 10000L, by = 1L) # can still fail for very small values
-    Sf_x_closed[i] = Sf_approx(original_function(type, sigma), lambda, interval)(x)
+    interval = interval=seq(from=-10000L, to = 10000L, by = 1L) # can still be different from the closed formula for very small values
+    Sf_x_approx[i] = Sf_approx(original_function(type, sigma), lambda, interval)(x)
     Sf_x_formula[i] = formula(x, sigma, lambda)
 
     if(N > 100) {
       print(i)
     }
-    expect_equal(Sf_x_closed[i], Sf_x_formula[i])
+    expect_equal(Sf_x_approx[i], Sf_x_formula[i])
   }
 }

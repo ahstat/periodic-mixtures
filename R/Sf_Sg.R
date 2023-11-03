@@ -146,34 +146,14 @@ Sf_closed_func = function(type, sigma, lambda) {
     return(NULL)
   } else if(type == "sinc") {
     sum_function = function(x) {
-      if(x == 0) {
+      if(x %% lambda == 0) {
         # continuous in 0 in all cases
         return((1/lambda)*(2*floor(lambda/(2*pi*sigma))+1))
       } else {
         return((1/(lambda*sin(pi*x/lambda)))*sin((2*floor(lambda/(2*pi*sigma))+1)*pi*x/lambda))
       }
-
     }
     return(function(x) {sapply(x, sum_function)})
-
-
-
-    # sum_function = function(x) {
-    #   K = floor(lambda/(2*pi*sigma))
-    #   y = pi*x/lambda
-    #   term1 = cos((K+1)*y)
-    #   term2 = sin(K*y)
-    #   term3 = sin(y)
-    #   sum_part = term1 * term2 / term3
-    #   if(sum(is.nan(sum_part)) > 0) {
-    #     sum_part[is.nan(sum_part)] = K # when x small to 0
-    #   }
-    #   if(sum(is.na(sum_part)) > 0) {
-    #     sum_part[is.na(sum_part)] = K
-    #   }
-    #   (1/lambda) + (2/lambda) * sum_part
-    # }
-    # return(function(x) {sapply(x, sum_function)})
   } else {
     return(NULL)
   }
@@ -222,26 +202,15 @@ Sg_closed_func = function(type, sigma, lambda) {
   } else if(type == "gaussian") {
     return(NULL)
   } else if(type == "sinc") {
-    # sum_function = function(x) {
-    #   N = floor(lambda / (2*pi*sigma))
-    #   if(N < 1) {
-    #     sum_part = 0
-    #   } else {
-    #     sum_part = sum( (1:N) * sin(2*pi*(1:N)*x/lambda))
-    #   }
-    #   -((4*pi)/lambda^2) * sum_part
-    # }
     sum_function = function(x) {
-      K = floor(lambda/(2*pi*sigma))
-      y = 2*pi*x/lambda
-      sum_part = (1/4)*(1/(sin(y/2)^2))*((K+1)*sin(K*y) - K*sin((K+1)*y))
-      if(sum(is.nan(sum_part)) > 0) {
-        sum_part[is.nan(sum_part)] = 0
+      A = lambda/(2*pi)
+      K = floor(A/sigma)
+      L = K+1
+      if(x %% lambda == 0) {
+        return(0)
+      } else {
+        return(-pi/(lambda^2*(sin(pi*x/lambda))^2)*(L*sin(x*K/A)-K*sin(x*L/A)))
       }
-      if(sum(is.na(sum_part)) > 0) {
-        sum_part[is.na(sum_part)] = 0
-      }
-      -((4*pi)/lambda^2) * sum_part
     }
     return(function(x) {sapply(x, sum_function)})
   } else {

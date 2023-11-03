@@ -2,12 +2,12 @@
 # devtools::document()
 # devtools::test()
 # devtools::build()
-# library(periodicmixtures)
+#library(periodicmixtures)
 
 # library(testthat)
 # library(dplyr)
 
-N = 1000
+N = 10
 lambda0 = runif(N, 0, 3)
 sigma0 = runif(N, 0, 3)
 x0 = runif(N, -3, 3)
@@ -44,7 +44,7 @@ K = 100L
 verbose = TRUE
 approx_is_Fourier = TRUE
 
-sigmas_and_lambdas = sigmas_and_lambdas_func(N)
+sigmas_and_lambdas = periodicmixtures:::sigmas_and_lambdas_func(N)
 sigmas = sigmas_and_lambdas$sigmas
 lambdas = sigmas_and_lambdas$lambdas
 vals = rep(NA, N)
@@ -56,6 +56,8 @@ for(k in 1:N) {
   }
   sigma = sigmas[k]
   lambda = lambdas[k]
+  sigma = 2.608231
+  lambda = 1.764153
   interval = seq(from = -K, to = K, by = 1L)
 
   elements = build_f_g_Ff_Fg(type, sigma)
@@ -82,5 +84,9 @@ for(k in 1:N) {
 if(verbose) {
   print(max(vals))
 }
+library(testthat)
 expect_true(all(vals <= eps)) # difference between direct sum and closed form sum is small
 
+x=x[1]
+Sf_closed(x)
+Sf_approx(x)

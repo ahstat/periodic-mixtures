@@ -970,19 +970,21 @@ test_that("Sf_closed and Sg_closed are correct for the *sinc case*", {
   type = "sinc"
 
   # random tests
-  # N_tested = 10 # 1000
-  # test_formula(formula_sinc_f, N_tested = N_tested,
-  #              type = type, original_function = f_func)#,
-  #              #Sf_approx = Sf_approx_Fourier_func)
-  # test_formula(formula_sinc_g, N_tested = N_tested,
-  #              type = type, original_function = g_func)
+  N_tested = 10 # 1000
+
+  test_formula(formula_sinc_f, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_sinc_g, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
 
   # grid test
   boundary_step = 1/2^0 # 1/2^2
-  # test_formula(formula_sinc_f, boundary_step = boundary_step,
-  #              type = type, original_function = f_func,
-  #              Sf_approx = Sf_approx_Fourier_func)
-  # test_formula(formula_sinc_g, boundary_step = boundary_step,
-  #              type = type, original_function = g_func,
-  #              Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_sinc_f, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_sinc_g, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
 })
