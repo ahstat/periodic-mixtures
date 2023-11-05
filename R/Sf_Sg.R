@@ -133,11 +133,11 @@ Sf_closed_func = function(type, sigma, lambda) {
   } else if(type == "exponential") {
     sum_function = function(x) {
       x = tilde_func(x, lambda)
-      C = (lambda/2)*(1/sigma)
+      C = lambda/sigma
       if(any(x/sigma > 709)) {
          stop("overflow for the computation, sigma is too small or x is too large")
       }
-      (1/(2*sigma))*cosh(C-abs(x)/sigma)/sinh(C)
+      (1/sigma)*cosh(C-2*abs(x)/sigma)/sinh(C)
     }
     return(sum_function)
   } else if(type == "polynomial") {
@@ -148,9 +148,9 @@ Sf_closed_func = function(type, sigma, lambda) {
     sum_function = function(x) {
       if(x %% lambda == 0) {
         # continuous in 0 in all cases
-        return((1/lambda)*(2*floor(lambda/(2*pi*sigma))+1))
+        return((1/lambda)*(2*floor(lambda/(2*sigma))+1))
       } else {
-        return((1/(lambda*sin(pi*x/lambda)))*sin((2*floor(lambda/(2*pi*sigma))+1)*pi*x/lambda))
+        return((1/(lambda*sin(pi*x/lambda)))*sin((2*floor(lambda/(2*sigma))+1)*pi*x/lambda))
       }
     }
     return(function(x) {sapply(x, sum_function)})
@@ -188,13 +188,13 @@ Sg_closed_func = function(type, sigma, lambda) {
   } else if(type == "exponential") {
     sum_function = function(x) {
       x = tilde_func(x, lambda)
-      C = (lambda/2)*(1/sigma)
+      C = lambda/sigma
       if(any(x/sigma > 709)) {
         stop("overflow for the computation, sigma is too small or x is too large")
       }
       # the real Sg function is not defined in some points,
       # below it is set to 0 for those points, as for g_func
-      (1/2)*(-sign(x)/sigma^2)*sinh(C-abs(x)/sigma)/sinh(C)
+      (-2*sign(x)/sigma^2)*sinh(C-2*abs(x)/sigma)/sinh(C)
     }
     return(sum_function)
   } else if(type == "polynomial") {
@@ -203,13 +203,13 @@ Sg_closed_func = function(type, sigma, lambda) {
     return(NULL)
   } else if(type == "sinc") {
     sum_function = function(x) {
-      A = lambda/(2*pi)
+      A = lambda/2
       K = floor(A/sigma)
       L = K+1
       if(x %% lambda == 0) {
         return(0)
       } else {
-        return(-pi/(lambda^2*(sin(pi*x/lambda))^2)*(L*sin(x*K/A)-K*sin(x*L/A)))
+        return(-pi/(lambda^2*(sin(pi*x/lambda))^2)*(L*sin(pi*x*K/A)-K*sin(pi*x*L/A)))
       }
     }
     return(function(x) {sapply(x, sum_function)})

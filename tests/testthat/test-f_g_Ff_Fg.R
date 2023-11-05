@@ -4,6 +4,7 @@ test_that("f sums to 1 for all types", {
     x0 = seq(from = -1e8, to = 1e8, length.out = length.out) # for very large variance functions
     x1 = seq(from = -10000, to = 10000, length.out = length.out) # for large variance functions
     x2 = seq(from = -10, to = 10, length.out = length.out) # for small variance functions
+    x3 = seq(from = -1, to = 1, length.out = length.out) # for very small variance functions
     vals = rep(NA, N)
     for(k in 1:N) {
       if(k %% 10 == 0) {
@@ -18,9 +19,10 @@ test_that("f sums to 1 for all types", {
       val0 = abs(sum(f(x0))*(x0[2]-x0[1]) - 1)
       val1 = abs(sum(f(x1))*(x1[2]-x1[1]) - 1)
       val2 = abs(sum(f(x2))*(x2[2]-x2[1]) - 1)
+      val3 = abs(sum(f(x3))*(x3[2]-x3[1]) - 1)
 
       # Take the best
-      vals[k] = min(val0, val1, val2)
+      vals[k] = min(val0, val1, val2, val3)
     }
     if(verbose) {
       print(max(vals))
@@ -29,18 +31,22 @@ test_that("f sums to 1 for all types", {
   }
 
   ## Quick checks (large epsilon)
+  expect_error(test_f_sums_to_one("rectangular", eps = 6e-5, N = 10, verbose = FALSE), NA)
   expect_error(test_f_sums_to_one("linear", eps = 1e-5, N = 10, verbose = FALSE), NA)
   expect_error(test_f_sums_to_one("exponential", eps = 9e-4, N = 10, verbose = FALSE), NA)
   expect_error(test_f_sums_to_one("polynomial", eps = 2e-2, N = 10, verbose = FALSE), NA)
   expect_error(test_f_sums_to_one("gaussian", eps = 4e-12, N = 10, verbose = FALSE), NA)
   expect_error(test_f_sums_to_one("sinc", eps = 2e-3, N = 10, verbose = FALSE), NA)
+  expect_error(test_f_sums_to_one("sinc2", eps = 1e-3, N = 10, verbose = FALSE), NA)
 
   # ## Longer checks (smaller epsilon)
+  # expect_error(test_f_sums_to_one("rectangular", eps = 5e-5, length.out = 1e6, verbose = TRUE), NA)
   # expect_error(test_f_sums_to_one("linear", eps = 2e-7, length.out = 1e6, verbose = TRUE), NA)
   # expect_error(test_f_sums_to_one("exponential", eps = 2e-5, length.out = 1e6, verbose = TRUE), NA)
   # expect_error(test_f_sums_to_one("polynomial", eps = 2e-3, length.out = 1e6, verbose = TRUE), NA)
   # expect_error(test_f_sums_to_one("gaussian", eps = 4e-11, length.out = 1e6, verbose = TRUE), NA)
   # expect_error(test_f_sums_to_one("sinc", eps = 7e-4, length.out = 1e6, verbose = TRUE), NA)
+  # expect_error(test_f_sums_to_one("sinc2", eps = 2e-4, length.out = 1e6, verbose = TRUE), NA)
   #
   # ## Very long checks (for polynomial, slow convergence...)
   # expect_error(test_f_sums_to_one("exponential", eps = 4e-7, length.out = 1e7, verbose = TRUE), NA)
@@ -82,17 +88,18 @@ test_that("g is the derivative of f for all types", {
     expect_true(all(vals <= eps)) # f' computed from scratch is very close to g
   }
 
+  expect_error(test_g_is_derivative_of_f("rectangular", eps = 3e-15, N = 10, verbose = FALSE), NA)
   expect_error(test_g_is_derivative_of_f("linear", eps = 3e-15, N = 10, verbose = FALSE), NA)
   expect_error(test_g_is_derivative_of_f("exponential", eps = 3e-4, N = 10, verbose = FALSE), NA)
   expect_error(test_g_is_derivative_of_f("polynomial", eps = 2e-4, N = 10, verbose = FALSE), NA)
   expect_error(test_g_is_derivative_of_f("gaussian", eps = 3e-4, N = 10, verbose = FALSE), NA)
   expect_error(test_g_is_derivative_of_f("sinc", eps = 3e-2, N = 10, verbose = FALSE), NA)
+  expect_error(test_g_is_derivative_of_f("sinc2", eps = 2e-3, N = 10, verbose = FALSE), NA)
 
   # expect_error(test_g_is_derivative_of_f("linear", eps = 3e-15, verbose = TRUE), NA)
   # expect_error(test_g_is_derivative_of_f("exponential", eps = 3e-4, verbose = TRUE), NA)
-  # expect_error(test_g_is_derivative_of_f("polynomial", eps = 2e-4, verbose = TRUE), NA)
-  # expect_error(test_g_is_derivative_of_f("gaussian", eps = 3e-4, verbose = TRUE), NA)
-  # expect_error(test_g_is_derivative_of_f("sinc", eps = 3e-3, length.out = 1e6, verbose = TRUE), NA)
+  # expect_error(test_g_is_derivative_of_f("polynomial", eps = 3e-4, verbose = TRUE), NA)
+  # expect_error(test_g_is_derivative_of_f("gaussian", eps = 4e-4, verbose = TRUE), NA)
 })
 
 test_that("sigma as defined by `sigma_such_as_Fourier_tranform_sums_to_one_func` makes `Ff_{sigma}` sum to one", {
@@ -120,16 +127,19 @@ test_that("sigma as defined by `sigma_such_as_Fourier_tranform_sums_to_one_func`
   }
 
   ## Quick checks (large epsilon)
+  expect_error(test_sigma_in_table_gives_Ff_sums_to_one("rectangular", eps = 2e-5, verbose = FALSE), NA)
   expect_error(test_sigma_in_table_gives_Ff_sums_to_one("linear", eps = 2e-5, verbose = FALSE), NA)
   expect_error(test_sigma_in_table_gives_Ff_sums_to_one("exponential", eps = 2e-4, verbose = FALSE), NA)
   expect_error(test_sigma_in_table_gives_Ff_sums_to_one("polynomial", eps = 9e-9, verbose = FALSE), NA)
   expect_error(test_sigma_in_table_gives_Ff_sums_to_one("gaussian", eps = 3e-12, verbose = FALSE), NA)
   expect_error(test_sigma_in_table_gives_Ff_sums_to_one("sinc", eps = 2e-5, verbose = FALSE), NA)
+  expect_error(test_sigma_in_table_gives_Ff_sums_to_one("sinc2", eps = 2e-10, verbose = FALSE), NA)
 })
 
 test_that("plots for f, g, Ff, Fg output correctly", {
   recompute = FALSE
   output_folder_plots0 = "~/Documents/GitHub/ahstat.github.io/images"
+  # output_folder_plots0 = "~/Github/ahstat.github.io/images"
   if(!dir.exists(output_folder_plots0)) {
     # pass this sequence, since there is no corresponding folder
     expect_true(0 == 0)
@@ -137,7 +147,7 @@ test_that("plots for f, g, Ff, Fg output correctly", {
     # library(periodicmixtures)
     library(ggplot2)
     library(ggh4x)
-    output_folder_plots = "~/Documents/GitHub/ahstat.github.io/images/2023-6-11-Periodic-mixtures/plot1"
+    output_folder_plots = file.path(output_folder_plots0, "2023-6-11-Periodic-mixtures/plot1")
     dir.create(output_folder_plots, showWarnings = FALSE)
     subfolders = list.files(output_folder_plots)
     if(identical(subfolders, c("f", "ℱf", "ℱg", "g")) & !recompute) {
@@ -146,8 +156,8 @@ test_that("plots for f, g, Ff, Fg output correctly", {
       expect_true(0 == 0)
     } else {
       # there are missing folders, recompute all of them
-      types = c("linear", "exponential", "polynomial", "gaussian", "sinc")
-      x = seq(from = -3, to = 3, length.out = 10000)
+      types = c("rectangular", "linear", "exponential", "polynomial", "gaussian", "sinc", "sinc2")
+      x = seq(from = -3, to = 3, length.out = 30001)
       p = list() # output plots
       my_functions = c("f" = f_func,
                        "g" = g_func,
