@@ -137,7 +137,7 @@ test_that("sigma as defined by `sigma_such_as_Fourier_tranform_sums_to_one_func`
 })
 
 test_that("plots for f, g, Ff, Fg output correctly", {
-  recompute = FALSE
+  recompute = TRUE
   output_folder_plots0 = "~/Documents/GitHub/ahstat.github.io/images"
   # output_folder_plots0 = "~/Github/ahstat.github.io/images"
   if(!dir.exists(output_folder_plots0)) {
@@ -175,6 +175,23 @@ test_that("plots for f, g, Ff, Fg output correctly", {
         for(type in types) {
           sigma = sigma_such_as_Fourier_tranform_sums_to_one_func(type)
           f = my_function(type, sigma)
+          if((type == "rectangular") & (name == "g")) {
+            # for this case, we highlight that the function is not exactly 0,
+            # contrary to the definition set in `f_g_Ff_Fg.R` (see explanations
+            # there). We use +1 and -1 for representing the Dirac functions here
+            f = function(x) {
+              out = rep(0, length(x))
+              positive_peak = which(x == -sigma/2)
+              negative_peak = which(x == sigma/2)
+              if(length(positive_peak) > 0) {
+                out[positive_peak] = 1
+              }
+              if(length(negative_peak) > 0) {
+                out[negative_peak] = -1
+              }
+              return(out)
+            }
+          }
           variable = ifelse(grepl("ℱ", name), freq_variable, "x")
           ylab_name = bquote(.(name)[σ](.(variable)))
           xlab_name = variable

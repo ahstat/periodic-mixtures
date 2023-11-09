@@ -3,8 +3,7 @@
 #' Function $f_{\sigma}(x)$.
 #' @param type string either "rectangular", "linear", "exponential", "polynomial",
 #' "gaussian", "sinc", or "sinc2"
-#' @param sigma positive parameter conveying variance information, such as the
-#' sd for the gaussian type
+#' @param sigma positive parameter conveying variance information
 #' @returns function taking a real `x` input and giving `f(x)` for this `sigma`
 #' @export
 f_func = function(type, sigma) {
@@ -36,8 +35,7 @@ f_func = function(type, sigma) {
     f = function(x) {
       sigma^(-1) * sinc(x/sigma)^2
     }
-  }
-  else {
+  } else {
     stop("Unknown type")
   }
   return(f)
@@ -48,24 +46,19 @@ f_func = function(type, sigma) {
 #' Derivative $g_{\sigma}(x)$ of the function $f_{\sigma}(x)$.
 #' @param type string either "rectangular", "linear", "exponential", "polynomial",
 #' "gaussian", "sinc", or "sinc2", defining the function `f`
-#' @param sigma positive parameter conveying variance information, such as the
-#' sd for the gaussian type
+#' @param sigma positive parameter conveying variance information
 #' @returns function taking a real `x` input and giving `g(x) := f'(x)` for this `sigma`
 #' @export
 g_func = function(type, sigma) {
   if(type == "rectangular") {
     g = function(x) {
-      # not defined in some points, below it is set to plus or minus 1 for those points
-      out = rep(0, length(x))
-      positive_peak = which(x == -sigma/2)
-      negative_peak = which(x == sigma/2)
-      if(length(positive_peak) > 0) {
-        out[positive_peak] = 1
-      }
-      if(length(negative_peak) > 0) {
-        out[negative_peak] = -1
-      }
-      return(out)
+      # not defined in some points, below it is set to 0 for those points
+      # (note: in terms of distributions, using +Inf and -Inf for the Dirac
+      # function may be possible, but after summing, Sg may be +Inf-Inf
+      # corresponding to the derivative of a Dirac, and there is no convenient
+      # way to represent it easily. So we stay with 0 here, keeping in mind it's
+      # not the exact representation (see e.g. the Fourier transform of g)
+      rep(0, length(x))
     }
   } else if(type == "linear") {
     g = function(x) {
@@ -111,8 +104,7 @@ g_func = function(type, sigma) {
 #' Fourier transform \mathcal{F}f_{\sigma}(\xi).
 #' @param type string either "rectangular", "linear", "exponential", "polynomial",
 #' "gaussian", "sinc", or "sinc2", defining the function `f`
-#' @param sigma positive parameter conveying variance information, such as the
-#' sd for the gaussian type
+#' @param sigma positive parameter conveying variance information
 #' @returns function taking a real `\xi` input and giving `\mathcal{F}f_{\sigma}(\xi)`
 #' the Fourier transform of `f` in `\xi`
 #' @export
@@ -156,8 +148,7 @@ Ff_func = function(type, sigma) {
 #' Fourier transform \mathcal{F}g_{\sigma}(\xi) of g, the derivative of f.
 #' @param type string either "rectangular", "linear", "exponential", "polynomial",
 #' "gaussian", "sinc", or "sinc2", defining the function `f`
-#' @param sigma positive parameter conveying variance information, such as the
-#' sd for the gaussian type
+#' @param sigma positive parameter conveying variance information
 #' @returns function taking a real `\xi` input and giving `\mathcal{F}g_{\sigma}(\xi)`
 #' the Fourier transform of `f` in `\xi`
 #' @export

@@ -39,13 +39,14 @@ test_that("Sf_approx_direct and Sf_approx_Fourier are almost equal for large int
   }
 
   ## Quick checks
+  expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("rectangular", eps = 4e-4, K = 1000L, N=1, length.out=1e3, verbose = FALSE), NA)
   expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("linear", eps = 7e-3, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("exponential", eps = 2e-3, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("gaussian", eps = 2e-15, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("polynomial", eps = 2e-3, N=1, length.out=1e2, K = 1000L, verbose = FALSE), NA)
   expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("sinc", eps = 2e-2, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("sinc", eps = 8e-4, K = 1000L, N=1, length.out=1e2, verbose = FALSE), NA)
-
+  expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("sinc2", eps = 3e-6, K = 1000L, N=1, length.out=1e3, verbose = FALSE), NA)
   # ## Long checks (200 seconds for 6*2 tests)
   # expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("linear", eps = 7e-3, verbose = TRUE), NA)
   # expect_error(test_Sf_approx_direct_and_Sf_approx_Fourier_gives_same("exponential", eps = 2e-3, verbose = TRUE), NA)
@@ -98,11 +99,13 @@ test_that("Sg_approx_direct and Sg_approx_Fourier are almost equal for large int
   }
 
   ## Quick checks
+  expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("rectangular", eps = 2, N=1, length.out=1e2,verbose = FALSE), NA) # not giving good results
   expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("linear", eps = 2, N=1, length.out=1e2, verbose = FALSE), NA) # large Gibbs effect
   expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("exponential", eps = 0.6, N=1, length.out=1e2, verbose = FALSE), NA) # large Gibbs effect
   expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("gaussian", eps = 2e-14, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("polynomial", eps = 2e-9, K = 1000L, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("sinc", eps = 6e-4, K = 1000L, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("sinc2", eps = 6e-9, K = 1000L, N=1, length.out=1e2, verbose = FALSE), NA)
 
   # ## Long checks (240 seconds for 5*2 tests)
   # expect_error(test_Sg_approx_direct_and_Sg_approx_Fourier_gives_same("linear", eps = 2, verbose = FALSE), NA) # large Gibbs effect
@@ -157,10 +160,13 @@ test_that("Sf_approx (either Fourier or direct depending on cases) and Sf_closed
   }
 
   ## Quick checks
+  expect_error(test_Sf_approx_and_Sf_closed_gives_same("rectangular", eps = 1e-16, K = 1000L, approx_is_Fourier = FALSE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("linear", eps = 4e-16, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("exponential", eps = 9e-11, N=1, length.out=1e2, verbose = FALSE), NA)
-  expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 2e-3, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sf_approx_and_Sf_closed_gives_same("polynomial", eps = 6e-5, N=1, length.out=1e2, verbose = FALSE), NA) # checked with N=10 and a larger K
+  expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 1e-8, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 2e-1, K = 1000L, approx_is_Fourier = FALSE, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc2", eps = 1e-8, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
 
   ## Long checks (~1800 seconds for 4*2 tests)
   # expect_error(test_Sf_approx_and_Sf_closed_gives_same("linear", eps = 4e-16, verbose = TRUE), NA)
@@ -220,10 +226,13 @@ test_that("Sg_approx (either Fourier or direct depending on cases) and Sg_closed
   }
 
   ## Quick checks
+  expect_error(test_Sg_approx_and_Sg_closed_gives_same("rectangular", eps = 3e-16, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("linear", eps = 3e-16, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("exponential", eps = 2e-13, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sg_approx_and_Sg_closed_gives_same("polynomial", eps = 2e-12, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("sinc", eps = 4e-13, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("sinc", eps = 8e-4, K = 1000L, approx_is_Fourier = FALSE, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sg_approx_and_Sg_closed_gives_same("sinc2", eps = 4e-13, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
 
   # ## Long checks (437 seconds for 4*2 tests)
   # expect_error(test_Sg_approx_and_Sg_closed_gives_same("linear", eps = 3e-16, verbose = TRUE), NA)
@@ -404,16 +413,17 @@ test_that("videos and plots for Sf output correctly", {
         return(p)
       }
       type2to_plot = function(type) {
-        if(type %in% c("exponential", "linear", "sinc")) {
+        if(type %in% c("rectangular", "linear", "exponential", "sinc")) {
           # in those cases, we checked on the plots that "direct" and "Fourier" are close
           return(c("closed"))
-        } else if(type %in% c("gaussian", "polynomial")) {
+        } else if(type %in% c("gaussian", "polynomial", "sinc2")) {
+          # sinc2 to update once the close form is known
           return(c("Fourier"))
         } else {
           return(c("closed", "direct", "Fourier"))
         }
       }
-      types = c("linear", "exponential", "polynomial", "gaussian", "sinc")
+      types = c("rectangular", "linear", "exponential", "polynomial", "gaussian", "sinc", "sinc2")
       # range of the video to plot
       max_lambda = 30
       min_lambda = 1/3
@@ -437,7 +447,7 @@ test_that("videos and plots for Sf output correctly", {
           p = plot_Sf(type, sigma, lambda, to_plot) +
             theme(legend.position="none") +
             ggtitle(NULL)
-          if(type %in% c("gaussian", "polynomial")) {
+          if(type %in% c("gaussian", "polynomial", "sinc2", "rectangular")) {
             p = p +
               scale_color_manual(values = c("closed"="black", "Fourier"="black", "direct"="black")) +
               scale_linetype_manual(values = c("closed" = "solid", "Fourier" = "solid", "direct" = "solid"))
@@ -451,7 +461,7 @@ test_that("videos and plots for Sf output correctly", {
             p2 = plot_Sf(type, sigma, lambda, to_plot, add_lambda = FALSE) +
               theme(legend.position="none") +
               ggtitle(NULL)
-            if(type %in% c("gaussian", "polynomial")) {
+            if(type %in% c("gaussian", "polynomial", "sinc2", "rectangular")) {
               p2 = p2 +
                 scale_color_manual(values = c("closed"="black", "Fourier"="black", "direct"="black")) +
                 scale_linetype_manual(values = c("closed" = "solid", "Fourier" = "solid", "direct" = "solid"))
@@ -897,6 +907,36 @@ test_that("Step by step computations to obtain the closed formula for the *linea
   test_in_the_central_interval(lambda = 1/2^3)
 })
 
+test_that("Sf_closed and Sg_closed are correct for the *rectangular case*", {
+  formula_rectangular_f = function(x, sigma, lambda) {
+    type = "rectangular"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_rectangular_g = function(x, sigma, lambda) {
+    type = "rectangular"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  # below on the grid (not the random samples), points are undefined,
+  # in those cases we evaluate the derivative as 0
+
+  type = "rectangular"
+
+  # random tests
+  N_tested = 10 # 1000
+  test_formula(formula_rectangular_f, N_tested = N_tested,
+               type = type, original_function = f_func)
+  test_formula(formula_rectangular_g, N_tested = N_tested,
+               type = type, original_function = g_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  test_formula(formula_rectangular_f, boundary_step = boundary_step,
+               type = type, original_function = f_func)
+  test_formula(formula_rectangular_g, boundary_step = boundary_step,
+               type = type, original_function = g_func)
+})
+
 test_that("Sf_closed and Sg_closed are correct for the *linear case*", {
   formula_linear_f = function(x, sigma, lambda) {
     type = "linear"
@@ -985,6 +1025,37 @@ test_that("Sf_closed and Sg_closed are correct for the *sinc case*", {
                type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
                Sf_approx = Sf_approx_Fourier_func)
   test_formula(formula_sinc_g, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
+})
+
+test_that("Sf_closed and Sg_closed are correct for the *sinc2 case*", {
+  formula_sinc2_f = function(x, sigma, lambda) {
+    type = "sinc2"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_sinc2_g = function(x, sigma, lambda) {
+    type = "sinc2"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  type = "sinc2"
+
+  # random tests
+  N_tested = 10 # 1000
+  test_formula(formula_sinc2_f, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_sinc2_g, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  test_formula(formula_sinc2_f, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_sinc2_g, boundary_step = boundary_step,
                type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
                Sf_approx = Sg_approx_Fourier_func)
 })

@@ -1,8 +1,8 @@
 #' Build f, g, Ff, and Fg functions according to the `f_g_Ff_Fg.R` file
 #' using pre-defined types
 #'
-#' @param type string either "linear", "exponential", "polynomial", "gaussian",
-#' or "sinc", defining the function `f` and all the other functions
+#' @param type string either "rectangular", "linear", "exponential", "polynomial",
+#' "gaussian", "sinc", or "sinc2", defining the function `f`
 #' @param sigma positive parameter conveying variance information, such as the
 #' sd for the gaussian type. The value is defined such that the Fourier tranform
 #' sums to one if this parameter is set to `NULL`
