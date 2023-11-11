@@ -158,7 +158,12 @@ Sf_closed_func = function(type, sigma, lambda) {
     }
     return(sum_function)
   } else if(type == "gaussian") {
-    return(NULL)
+    sum_function = function(x, maxiter = 3e4) {
+      z = pi*x/lambda
+      q = exp(-pi*sigma^2/lambda^2)
+      (1/lambda)*theta3(z = z, q = q, maxiter = maxiter)
+    }
+    return(sum_function)
   } else if(type == "sinc") {
     sum_function = function(x) {
       if(x %% lambda == 0) {
@@ -245,7 +250,12 @@ Sg_closed_func = function(type, sigma, lambda) {
     }
     return(sum_function)
   } else if(type == "gaussian") {
-    return(NULL)
+    sum_function = function(x, maxiter = 3e4) {
+      z = pi*x/lambda
+      q = exp(-pi*sigma^2/lambda^2)
+      (pi/lambda^2)*theta3dash(z = z, q = q, maxiter = maxiter)
+    }
+    return(sum_function)
   } else if(type == "sinc") {
     sum_function = function(x) {
       A = lambda/2

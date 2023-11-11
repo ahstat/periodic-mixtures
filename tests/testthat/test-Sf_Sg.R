@@ -164,6 +164,7 @@ test_that("Sf_approx (either Fourier or direct depending on cases) and Sf_closed
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("linear", eps = 4e-16, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("exponential", eps = 9e-11, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("polynomial", eps = 6e-5, N=1, length.out=1e2, verbose = FALSE), NA) # checked with N=10 and a larger K
+  expect_error(test_Sf_approx_and_Sf_closed_gives_same("gaussian", eps = 7e-15, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 1e-8, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc", eps = 2e-1, K = 1000L, approx_is_Fourier = FALSE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sf_approx_and_Sf_closed_gives_same("sinc2", eps = 1e-8, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
@@ -230,6 +231,7 @@ test_that("Sg_approx (either Fourier or direct depending on cases) and Sg_closed
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("linear", eps = 3e-16, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("exponential", eps = 2e-13, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("polynomial", eps = 2e-12, N=1, length.out=1e2, verbose = FALSE), NA)
+  expect_error(test_Sg_approx_and_Sg_closed_gives_same("gaussian", eps = 2e-13, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("sinc", eps = 4e-13, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("sinc", eps = 8e-4, K = 1000L, approx_is_Fourier = FALSE, N=1, length.out=1e2, verbose = FALSE), NA)
   expect_error(test_Sg_approx_and_Sg_closed_gives_same("sinc2", eps = 4e-13, approx_is_Fourier = TRUE, N=1, length.out=1e2, verbose = FALSE), NA)
@@ -995,6 +997,70 @@ test_that("Sf_closed and Sg_closed are correct for the *exponential case*", {
                type = type, original_function = f_func)
   test_formula(formula_exponential_g, boundary_step = boundary_step,
                type = type, original_function = g_func)
+})
+
+test_that("Sf_closed and Sg_closed are correct for the *polynomial case*", {
+  formula_polynomial_f = function(x, sigma, lambda) {
+    type = "polynomial"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_polynomial_g = function(x, sigma, lambda) {
+    type = "polynomial"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  type = "polynomial"
+
+  # random tests
+  N_tested = 10 # 1000
+
+  test_formula(formula_polynomial_f, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_polynomial_g, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  test_formula(formula_polynomial_f, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_polynomial_g, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
+})
+
+test_that("Sf_closed and Sg_closed are correct for the *gaussian case*", {
+  formula_gaussian_f = function(x, sigma, lambda) {
+    type = "gaussian"
+    Sf_closed_func(type, sigma, lambda)(x)
+  }
+  formula_gaussian_g = function(x, sigma, lambda) {
+    type = "gaussian"
+    Sg_closed_func(type, sigma, lambda)(x)
+  }
+
+  type = "gaussian"
+
+  # random tests
+  N_tested = 10 # 1000
+
+  test_formula(formula_gaussian_f, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_gaussian_g, N_tested = N_tested,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
+
+  # grid test
+  boundary_step = 1/2^0 # 1/2^2
+  test_formula(formula_gaussian_f, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sf_approx_Fourier_func, Ff_func needs to be plug
+               Sf_approx = Sf_approx_Fourier_func)
+  test_formula(formula_gaussian_g, boundary_step = boundary_step,
+               type = type, original_function = Ff_func, # for Sg_approx_Fourier_func, Ff_func needs to be plug too
+               Sf_approx = Sg_approx_Fourier_func)
 })
 
 test_that("Sf_closed and Sg_closed are correct for the *sinc case*", {
