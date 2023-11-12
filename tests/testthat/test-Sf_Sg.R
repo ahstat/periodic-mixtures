@@ -375,7 +375,7 @@ test_that("videos and plots for Sf output correctly", {
         my_labels = c(label_small,
                       "1/λ ",
                       cust_format(max(data$y)))
-        if(diff(range(data$y)) == 0) {
+        if(abs(diff(range(data$y))) < 1e-15) {
           my_breaks = c(1/lambda)
           my_labels = c(" 1/λ ")
         }
@@ -399,7 +399,7 @@ test_that("videos and plots for Sf output correctly", {
 
         y_text_lambda = min(data$y) - delta_y*45/100
         my_vjust = 0
-        if(delta_y == 0) {
+        if(abs(delta_y) < 1e-15) {
           my_vjust = 6.45
         }
 
@@ -415,11 +415,10 @@ test_that("videos and plots for Sf output correctly", {
         return(p)
       }
       type2to_plot = function(type) {
-        if(type %in% c("rectangular", "linear", "exponential", "sinc")) {
+        if(type %in% c("rectangular", "linear", "exponential", "polynomial", "gaussian", "sinc", "sinc2")) {
           # in those cases, we checked on the plots that "direct" and "Fourier" are close
           return(c("closed"))
-        } else if(type %in% c("gaussian", "polynomial", "sinc2")) {
-          # sinc2 to update once the close form is known
+        } else if(type %in% c()) {
           return(c("Fourier"))
         } else {
           return(c("closed", "direct", "Fourier"))
@@ -430,7 +429,7 @@ test_that("videos and plots for Sf output correctly", {
       max_lambda = 30
       min_lambda = 1/3
       nb_lambdas = 100
-      type = types[5]
+      type = types[6]
       for(type in types) {
         to_plot = type2to_plot(type)
         sigma = sigma_such_as_Fourier_tranform_sums_to_one_func(type)
@@ -442,6 +441,7 @@ test_that("videos and plots for Sf output correctly", {
         output_folder_plots_current = file.path(output_folder_plots, "Sf", type)
         dir.create(output_folder_plots_current, showWarnings = FALSE)
         N = length(lambdas)
+        k=90
         for(k in 1:N) {
           lambda = lambdas[k]
           name = paste0(paste(rep("0", nchar(N) - nchar(k)), collapse = ""), k)
@@ -449,7 +449,7 @@ test_that("videos and plots for Sf output correctly", {
           p = plot_Sf(type, sigma, lambda, to_plot) +
             theme(legend.position="none") +
             ggtitle(NULL)
-          if(type %in% c("gaussian", "polynomial", "sinc2", "rectangular")) {
+          if(type %in% c()) {
             p = p +
               scale_color_manual(values = c("closed"="black", "Fourier"="black", "direct"="black")) +
               scale_linetype_manual(values = c("closed" = "solid", "Fourier" = "solid", "direct" = "solid"))
@@ -463,7 +463,7 @@ test_that("videos and plots for Sf output correctly", {
             p2 = plot_Sf(type, sigma, lambda, to_plot, add_lambda = FALSE) +
               theme(legend.position="none") +
               ggtitle(NULL)
-            if(type %in% c("gaussian", "polynomial", "sinc2", "rectangular")) {
+            if(type %in% c()) {
               p2 = p2 +
                 scale_color_manual(values = c("closed"="black", "Fourier"="black", "direct"="black")) +
                 scale_linetype_manual(values = c("closed" = "solid", "Fourier" = "solid", "direct" = "solid"))
@@ -475,7 +475,7 @@ test_that("videos and plots for Sf output correctly", {
         }
       }
 
-      ## Step 2. Create the video for Sf
+      ## Step 2. Create the video for Sf ----
       save_video_from_png_folder = function(my_folder,
                                             stop_positions_frame_idx = c(1, 51, 100),
                                             stop_positions_duration_s = 3,

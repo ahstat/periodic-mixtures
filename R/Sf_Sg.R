@@ -176,7 +176,7 @@ Sf_closed_func = function(type, sigma, lambda) {
     return(function(x) {sapply(x, sum_function)})
   } else if(type == "sinc2") {
     sum_function = function(x) {
-      if(x %% lambda == 0) {
+      if((abs(x %% lambda) < 1e-14) | (abs((x %% lambda) - lambda) < 1e-14)) {
         N = floor(lambda/sigma)
         left = (1/lambda)*(2*floor(lambda/sigma)+1)
         right = -sigma*N*(N+1)/lambda^2
