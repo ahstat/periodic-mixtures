@@ -28,12 +28,35 @@ test_that("phi outputs correct value for some known values", {
   expect_equal(phi(exp(-16*pi)), phi_16)
 })
 
-test_that("sigmas_and_lambdas_func outputs a list of numeric values", {
-  N = 20
-  out = sigmas_and_lambdas_func(N = 20, seed = 1234)
-  expect_equal(names(out), c("sigmas", "lambdas"))
-  expect_equal(length(out$sigmas), N)
-  expect_equal(length(out$lambdas), N)
-  expect_true(all(out$lambdas >= 0 & out$lambdas <= 10))
-  expect_true(all(out$sigmas >= 0 & out$sigmas <= 10))
+test_that("tilde_func has some closed form expressions", {
+  step = 1/2^0 # tested with 1/2^3
+
+  # For Rectangular, Linear, Exponential types (x tilde)
+  f = function(x, lambda, sigma) {
+    tilde_func(x, lambda)
+  }
+  g = function(x, lambda, sigma) {
+    x - lambda*floor(x/lambda + 1/2)
+  }
+  check_equal_func(f, g, step)
+
+  # For Rectangular type (sigma breve)
+  f = function(x, lambda, sigma) {
+    sigma_tilde2 = tilde_func(sigma, 2*lambda)
+    return(sigma_tilde2)
+  }
+  g = function(x, lambda, sigma) {
+    sigma - 2*lambda*floor(sigma/(2*lambda) + 1/2)
+  }
+  check_equal_func(f, g, step)
+
+  # For Linear type (sigma tilde)
+  f = function(x, lambda, sigma) {
+    sigma_tilde = tilde_func(sigma, lambda)
+    return(sigma_tilde)
+  }
+  g = function(x, lambda, sigma) {
+    sigma - lambda*floor(sigma/lambda + 1/2)
+  }
+  check_equal_func(f, g, step)
 })

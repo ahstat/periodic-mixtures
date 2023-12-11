@@ -108,10 +108,8 @@ Sg_approx_Fourier_func = function(Ff, lambda, interval = seq(from = -5L, to = 5L
 
 #' Sum of f (closed form)
 #'
-#' @param type string either "linear", "exponential", "polynomial", "gaussian",
-#' or "sinc"
-#' @param sigma positive parameter conveying variance information, such as the
-#' sd for the gaussian type
+#' @param type string such as "linear", "exponential"...
+#' @param sigma positive parameter conveying variance information
 #' @param lambda positive parameter conveying the periodicity
 #' @returns sum of f taking a real `x` input and giving `Sf(x)` for this
 #' `(type, sigma, lambda)` on its closed-form, or `NULL` if the closed-form
@@ -196,10 +194,8 @@ Sf_closed_func = function(type, sigma, lambda) {
 
 #' Sum of g (closed form)
 #'
-#' @param type string either "linear", "exponential", "polynomial", "gaussian",
-#' or "sinc"
-#' @param sigma positive parameter conveying variance information, such as the
-#' sd for the gaussian type
+#' @param type string such as "linear", "exponential"...
+#' @param sigma positive parameter conveying variance information
 #' @param lambda positive parameter conveying the periodicity
 #' @returns sum of g taking a real `x` input and giving `Sg(x)` for this
 #' `(type, sigma, lambda)` on its closed-form, or `NULL` if the closed-form
@@ -275,10 +271,10 @@ Sg_closed_func = function(type, sigma, lambda) {
       } else {
         K = floor(lambda/sigma)
         L = K+1
-        cos_diff = K*(cos(K*2*pi*x/lambda)-cos(L*2*pi*x/lambda))
-        sin_diff = K*(sin(K*2*pi*x/lambda)-sin(L*2*pi*x/lambda))
+        cos_diff = cos(K*2*pi*x/lambda) + K*(cos(K*2*pi*x/lambda)-cos(L*2*pi*x/lambda)) - 1
+        sin_diff = L*K*(sin(K*2*pi*x/lambda)-sin(L*2*pi*x/lambda))
         left = -pi/(lambda^2*(sin(pi*x/lambda))^2)*(L*sin(K*2*pi*x/lambda)-K*sin(L*2*pi*x/lambda))
-        right = (pi*sigma/lambda^3)*(cos(pi*x/lambda)*(cos(K*2*pi*x/lambda)+cos_diff-1)+sin(pi*x/lambda)*L*sin_diff)/sin(pi*x/lambda)^3
+        right = (pi*sigma/lambda^3)*(cos(pi*x/lambda)*cos_diff+sin(pi*x/lambda)*sin_diff)/sin(pi*x/lambda)^3
         return(left+right)
       }
     }

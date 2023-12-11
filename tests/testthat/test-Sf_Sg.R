@@ -476,21 +476,6 @@ test_that("videos and plots for Sf output correctly", {
       }
 
       ## Step 2. Create the video for Sf ----
-      save_video_from_png_folder = function(my_folder,
-                                            stop_positions_frame_idx = c(1, 51, 100),
-                                            stop_positions_duration_s = 3,
-                                            video_wo_stop_time_s = 10) {
-        files = list.files(my_folder, "*.png", full.names = TRUE)
-        N = length(files)
-        framerate = floor(N/video_wo_stop_time_s)
-        dur_each = rep(1, N)
-        if(length(stop_positions_frame_idx) > 0) {
-          dur_each[stop_positions_frame_idx] = stop_positions_duration_s*framerate
-        }
-        av::av_encode_video(rep(files, dur_each),
-                            framerate = framerate,
-                            output = paste0(my_folder, ".mp4"))
-      }
       for(type in types) {
         my_folder = file.path(output_folder_plots, "Sf", type)
         save_video_from_png_folder(my_folder)

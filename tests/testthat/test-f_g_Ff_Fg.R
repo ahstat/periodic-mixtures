@@ -137,7 +137,7 @@ test_that("sigma as defined by `sigma_such_as_Fourier_tranform_sums_to_one_func`
 })
 
 test_that("plots for f, g, Ff, Fg output correctly", {
-  recompute = TRUE
+  recompute = FALSE
   output_folder_plots0 = "~/Documents/GitHub/ahstat.github.io/images"
   # output_folder_plots0 = "~/Github/ahstat.github.io/images"
   if(!dir.exists(output_folder_plots0)) {
