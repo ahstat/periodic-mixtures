@@ -8,7 +8,9 @@
 #' @returns Scaling term to apply in this case to obtain Zf from Sf
 #' @export
 scaling_term_func = function(t, sigma, type) {
-  if(type == "linear") {
+  if(type == "rectangular") {
+    return(sigma)
+  } else if(type == "linear") {
     return(t*sigma)
   }
 }
@@ -52,12 +54,12 @@ Zf_func_from_Sf_closed_func = function(type, sigma) {
 
 # The helpers used to retrieve the simplified forms of the expressions ----
 
-#' For the Rectangular and Linear types, Delta condition as a function of t and z
+#' For the Linear type, Delta condition as a function of t and z
 #'
 #' @param t Current time (t > 0)
 #' @param z Current position (z in R)
 #' @returns Whether this current value (t,z) fulfill the condition Delta,
-#' used in the Rectangular and Linear cases
+#' used in the Linear case
 #' @export
 Delta_func = function(t, z) {
   # abs(t-1/2)+abs(z) <= 1/2 # correct form, but sensitive to rounding
@@ -77,7 +79,52 @@ Zf_func = function(type, sigma) {
   # Direct computation of Zf given (t, z)
   # t Current time (t > 0)
   # z Current normalized position in space (z in R)
-  if(type == "linear") {
+  if(type == "rectangular") {
+    return(
+      function(t, z) {
+        frac_z_minus = z-floor(z+1/2)
+        frac_t_over_2 = t/2-floor(t/2) # {t/2} == t_within_0_2/2
+
+        value_diff = round(abs(frac_t_over_2-1/2)+abs(frac_z_minus)-1/2, 10)
+        # condition = (value_diff<0) | (frac_z_minus==0) | ((value_diff==0) & (t/2-floor(t/2+1/2)>0))
+        # condition = (value_diff<0) | ((value_diff==0) & (t/2-floor(t/2+1/2)>=0))
+        condition = (value_diff<0) | ((value_diff==0) & (frac_t_over_2<1/2))
+        #-2*frac_t_over_2 + condition + (1-condition)*(2*floor(2*frac_t_over_2))
+        #-2*frac_t_over_2 + condition + 2*(1-condition)*(frac_t_over_2 >= 1/2)
+        condition2 = (frac_t_over_2 >= 1/2)
+        (1-2*frac_t_over_2)  + (condition + 2*(1-condition)*condition2-1)
+        # condition condition2 term_at_right
+        #     0          0         -1
+        #     0          1          1
+        #     1          0          0
+        #     1          1          0
+
+        conditionB = (frac_t_over_2 < 1/2)
+        conditionA = (value_diff<0) | ((value_diff==0) & (conditionB))
+
+        (1-2*frac_t_over_2)  + (1-conditionA)*(-1)^(conditionB)
+
+      }
+    )
+    # return(
+    #   function(t, z) {
+    #     frac_z_minus = z-floor(z+1/2)
+    #     frac_t_over_2 = t/2-floor(t/2) # {t/2} == t_within_0_2/2
+    #
+    #     value_diff = round(abs(frac_t_over_2-1/2)+abs(frac_z_minus)-1/2, 10)
+    #     condition = (value_diff<0) | (frac_z_minus==0) | ((value_diff==0) & (frac_t_over_2-floor(frac_t_over_2+1/2)>0))
+    #
+    #     if(frac_t_over_2 < 1/2) {
+    #       my_sign = +1
+    #       add = 0
+    #     } else {
+    #       my_sign = -1
+    #       add = 2
+    #     }
+    #     -2*frac_t_over_2 + my_sign*condition + add
+    #   }
+    # )
+  } else if(type == "linear") {
     return(
       function(t, z) {
         # t-floor(t+1/2) is the shifted fractional part of t
@@ -88,3 +135,6 @@ Zf_func = function(type, sigma) {
     )
   }
 }
+
+# TODO: test the formula for simplified and simplified versions of rect
+#

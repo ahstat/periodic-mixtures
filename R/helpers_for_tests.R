@@ -98,6 +98,7 @@ check_equal_func = function(f, g, step = 1/2^3, x_range = c(-2, 2), lambda_max =
 #' @param z_range range of the interval for z
 #' @param t_max max of the interval for lambda
 #' @returns check the validity of f == g on the grid of values
+#' @export
 check_equal_tz_func = function(f, g, step = 1/2^3, z_range = c(-2, 2), t_max = 2) {
   t = seq(from = step, to = t_max, by = step)
   z = seq(from = z_range[1], to = z_range[2], by = step)
