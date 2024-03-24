@@ -170,18 +170,82 @@ frac_minus = function(t) {
   tilde_func(t, 1)
 }
 
-save_video_from_png_folder = function(my_folder,
-                                      stop_positions_frame_idx = c(),
-                                      stop_positions_duration_s = 3,
-                                      video_wo_stop_time_s = 10) {
-  files = list.files(my_folder, "*.png", full.names = TRUE)
-  N = length(files)
-  framerate = floor(N/video_wo_stop_time_s)
-  dur_each = rep(1, N)
-  if(length(stop_positions_frame_idx) > 0) {
-    dur_each[stop_positions_frame_idx] = stop_positions_duration_s*framerate
+#' Find the maximum of an implicit function, with some assumptions
+#'
+#' @param F_tz function that input t,z and output a numeric value.
+#' The function is such that, for each t, there is one and only one root z_root(t),
+#' and, over t, the function z_root has a maximum z0 on the interval t_interval. There
+#' should be a unique maximum on the interval
+#' @param t_interval interval of t
+#' @param z_interval interval of z
+#' @param verbose whether to show plot at each step
+#' @param precBits precision of the numeric representation
+#' @param length.out interval length where to find the maximum
+#' @returns the detected interval where the maximum z0 is, and the
+#' corresponding time interval where the true t0 value is.
+#' @export
+find_maximum_implicit = function(F_tz,
+                        t_interval = c(1, 3),
+                        z_interval = c(1e-8, 0.5),
+                        verbose = TRUE,
+                        precBits=64,
+                        length.out=11) {
+  t_range = seq(from = mpfr(t_interval[1], precBits = precBits),
+                to = mpfr(t_interval[2], precBits = precBits),
+                length.out = length.out)
+  stop_recursion = FALSE
+  iteration = 1
+  while(!stop_recursion) {
+    z_range = list()
+    for(k in 1:length(t_range)) {
+      t = t_range[[k]]
+      f = function(z) {
+        F_tz(t, z)
+      }
+      z_range[[k]] = try(unirootR(f, z_interval, tol = .Machine$double.eps), silent=TRUE)$root
+    }
+    z_range = do.call(c, z_range)
+    if(verbose) {
+      # note: after some iterations, it is too small for 32 bits precision
+      plot(sapply(t_range, asNumeric), sapply(z_range, asNumeric), main = iteration)
+      iteration = iteration + 1
+    }
+    idx_neg = which(diff(z_range) < 0)
+    idx_pos = which(diff(z_range) > 0)
+
+    if(length(idx_neg) == 0 || length(idx_pos) == 0 || max(idx_pos) >= min(idx_neg)) {
+      stop_recursion = TRUE
+    } else { # increasing then decreasing
+      idx = max(idx_pos)
+      t_range_old = t_range
+      z_range_old = z_range
+      t_range = seq(from = t_range[[idx]],
+                    to = t_range[[idx+2]],
+                    length.out = length.out)
+    }
   }
-  av::av_encode_video(rep(files, dur_each),
-                      framerate = framerate,
-                      output = paste0(my_folder, ".mp4"))
+
+  # keep the interval
+  l = list(t=range(t_range_old), z=range(z_range_old))
+  return(l)
+}
+
+#' Convert an interval of [t1,t2] with corresponding [z1,z2] to a single
+#' string truncating the common decimals
+#'
+#' @param l a list with elements t and z, each being a range
+#' @returns a vector of string with t then z
+#' @export
+maximum_number_to_str = function(l) {
+  t1 = trimws(capture.output(str(l$t[[1]], give.head=FALSE, digits.d=100)))
+  t2 = trimws(capture.output(str(l$t[[2]], give.head=FALSE, digits.d=100)))
+  z1 = trimws(capture.output(str(l$z[[1]], give.head=FALSE, digits.d=100)))
+  z2 = trimws(capture.output(str(l$z[[2]], give.head=FALSE, digits.d=100)))
+
+  max_z = max(which(sapply(1:min(nchar(z1), nchar(z2)), function(i){substr(z1, 1, i) == substr(z2, 1, i)})))
+  max_t = max(which(sapply(1:min(nchar(t1), nchar(t2)), function(i){substr(t1, 1, i) == substr(t2, 1, i)})))
+
+  final_z = substr(z1, 1, max_z)
+  final_t = substr(t1, 1, max_t)
+  return(c(final_t, final_z))
 }

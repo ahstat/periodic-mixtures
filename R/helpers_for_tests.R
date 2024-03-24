@@ -99,7 +99,7 @@ check_equal_func = function(f, g, step = 1/2^3, x_range = c(-2, 2), lambda_max =
 #' @param t_max max of the interval for lambda
 #' @returns check the validity of f == g on the grid of values
 #' @export
-check_equal_tz_func = function(f, g, step = 1/2^3, z_range = c(-2, 2), t_max = 2) {
+check_equal_tz_func = function(f, g, step = 1/2^3, z_range = c(-2, 2), t_max = 2, tol = NULL) {
   t = seq(from = step, to = t_max, by = step)
   z = seq(from = z_range[1], to = z_range[2], by = step)
   df = expand.grid(z = z, t = t)
@@ -112,6 +112,34 @@ check_equal_tz_func = function(f, g, step = 1/2^3, z_range = c(-2, 2), t_max = 2
     }
     predicted = f(df$t[i], df$z[i])
     groundtruth = g(df$t[i], df$z[i])
-    expect_equal(predicted, groundtruth)
+    if(is.null(tol)) {
+      expect_equal(predicted, groundtruth)
+    } else {
+      expect_equal(predicted, groundtruth, tolerance = tol)
+    }
   }
+}
+
+#' Convert a folder of png into an mp4 video
+#'
+#' @param my_folder folder containing images, ordered in the right order
+#' @param stop_positions_frame_idx specific positions where the video should pause
+#' @param stop_positions_duration_s duration of the pause in the stop positions, in second
+#' @param video_wo_stop_time_s whole duration of the video in seconds
+#' @returns nothing, save into the parent of `my_folder`, with the name `my_folder.mp4`
+#' @export
+save_video_from_png_folder = function(my_folder,
+                                      stop_positions_frame_idx = c(),
+                                      stop_positions_duration_s = 3,
+                                      video_wo_stop_time_s = 10) {
+  files = list.files(my_folder, "*.png", full.names = TRUE)
+  N = length(files)
+  framerate = floor(N/video_wo_stop_time_s)
+  dur_each = rep(1, N)
+  if(length(stop_positions_frame_idx) > 0) {
+    dur_each[stop_positions_frame_idx] = stop_positions_duration_s*framerate
+  }
+  av::av_encode_video(rep(files, dur_each),
+                      framerate = framerate,
+                      output = paste0(my_folder, ".mp4"))
 }
