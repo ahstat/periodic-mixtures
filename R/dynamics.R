@@ -155,32 +155,42 @@ Zf_func = function(type, sigma) {
       }
     )
   } else if(type == "gaussian") {
-    return(
-      function(t, z) {
-        # normalization (exp(pi*t^2)/(2*t))*sigma
-        # Zf = cos(2*pi*z) + sum_{k=2}^{+inf} exp(-pi*t^2*(k^2-1))*cos(2*k*pi*z)
-        maxiter = 3e4
-
-        # z=0
-        # t=seq(from = 0.3, to = 5, length.out = 1000)[-1]
-        # out = theta3(z = pi*z, q = exp(-pi*t^2), maxiter = maxiter)
-        # v1 = (out - 1)*exp(pi*t^2)/2
-        out = cos(2*pi*z)
-        q = exp(-pi*t^2)
-        for (k in 2:maxiter) {
-          out_new = out + q^(k^2-1) * cos(2*k*pi*z)
-          if(elliptic::near.match(out, out_new) & k > 5) {
-            return(out)
-          }
-          out = out_new
-        }
-        # v2 = out
-        # plot(t, v1, type = "l")
-        # lines(t, v2, col = "red")
-        # plot(t, v1-v2, type = "l")
-        stop("maximum iterations reached")
-      }
-    )
+    return(function(t, z) {
+      # version 3:
+      sapply(t, function(t){Re((exp(pi*t^2)/2)*(jacobi::jtheta3(z = pi*z, q = exp(-pi*t^2))-1))})
+#       # normalization (exp(pi*t^2)/(2*t))*sigma
+#       # Zf = cos(2*pi*z) + sum_{k=2}^{+inf} exp(-pi*t^2*(k^2-1))*cos(2*k*pi*z)
+#       maxiter = 3e4
+#
+#       # Debug code:
+#       # z=0
+#       # t=seq(from = 0.3, to = 5, length.out = 1000)[-1]
+#
+#       # Version 1: Not stable from t = 3:
+#       # out = theta3(z = pi*z, q = exp(-pi*t^2), maxiter = maxiter)
+#       # v1 = (out - 1)*exp(pi*t^2)/2
+#
+#       # Version 2: Stable even for t > 3
+#       out = cos(2*pi*z)
+#       out_previous = -2
+#
+#       q = exp(-pi*t^2)
+#       for (k in 2:maxiter) {
+#         out_new = out + q^(k^2-1) * cos(2*k*pi*z)
+#         if(elliptic::near.match(out, out_new) & k >= 5 & elliptic::near.match(out, out_previous)) {
+#           return(out)
+#         }
+#
+#         out_previous = out
+#         out = out_new
+#       }
+#       return(NA) # maximum iterations reached
+#       # Debug code: compare v1 and v2 over time
+#       # v2 = out
+#       # plot(t, v1, type = "l")
+#       # lines(t, v2, col = "red")
+#       # plot(t, v1-v2, type = "l")
+    })
   } else {
     stop("Zf closed-form is not defined for this type in Zf_func")
   }

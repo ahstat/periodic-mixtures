@@ -243,7 +243,7 @@ test_that("videos and plots for moving in time output correctly", {
     )
 
     params[["gaussian"]] = list(
-      tmax = 2,
+      tmax = 1,
       length.out_z = 201,
       length.out_t = 201,
       z0 = c(-1/2, -1/4, -1/6, 0, 1/6, 1/4, 1/2),
@@ -252,17 +252,17 @@ test_that("videos and plots for moving in time output correctly", {
       breaks = c(-1, 0, 1, 2), # Zf
       minor_breaks = c(),
       labels = c(-1, 0, 1, 2),
-      limits = c(-999,999),
+      limits = c(-999,999), # limits = c(-999,999)
       char_t_name = " t=",
       percent_x = 15/100,
 
-      breaks_z_x = c(0, 1, 2), # time
-      minor_breaks_z_x = c(1/2, 3/2),
+      breaks_z_x = c(0, 1/2, 1), # time
+      minor_breaks_z_x = c(1/4, 3/4),
       labels_z_x = c(0, 1, 2),
       breaks_z_y = c(-1, 0, 1, 2), # Zf
       minor_breaks_z_y = c(),
       labels_z_y = c(-1, 0, 1, 2),
-      limits_z_y = c(-999,999),
+      limits_z_y = c(-999,999), # limits_z_y = c(-999,999)
       xlab_z = "t"
     )
     # End list of parameters for each type ----
@@ -367,6 +367,7 @@ test_that("videos and plots for moving in time output correctly", {
             t_cur = t
           }
 
+          # k = 2
           for(k in 1:length(z0)) {
             data[[k]] = data.frame(z = z0[k],
                                    t = rep(t_cur, length(z0)),
@@ -614,6 +615,70 @@ test_that("videos and plots for moving in time output correctly", {
                 color = color,
                 data = data.frame(x=t0, y=z0, color = color))
             return(p3)
+          }  else if(grepl("gaussian", type)) {
+            curve_zeros_top = function(t) {
+              type = "gaussian"
+              sigma = 1
+              F_tz = Zf_func(type, sigma)
+              #t = seq(from = 0, to = 0.00001, length.out = 101)[-1]
+              z_interval = c(1e-8, 0.5)
+              res = get_roots(F_tz, t, z_interval)
+              return(res)
+            }
+
+            t = seq(from = 0, to = 2.5, length.out = 300)[-1]
+            df_poly = data.frame(
+              x = t,
+              ymin = -curve_zeros_top(t),
+              ymax = curve_zeros_top(t)
+            )
+            df_poly = rbind(
+              data.frame(x=0, ymin=0, ymax=0),
+              df_poly
+            )
+
+            p3 = ggplot(df_poly) +
+              geom_ribbon(aes(x = x, ymin= ymin, ymax = ymax), fill = "#EEEEEE", color = "darkgray") +
+              theme_bw() +
+              xlab("t") +
+              ylab("z") +
+              theme_bw() +
+              scale_x_continuous(
+                breaks = c(0, 1/2, 1),
+                minor_breaks = c(1/4, 3/4),
+                labels = c(0, 1/2, 1)) +
+              scale_y_continuous(
+                breaks = c(-1/2, 0, 1/2),
+                #breaks = c(-1/2, 0, 1/2-1/(2*sqrt(3)), 1/2),
+                minor_breaks = c(-1/4, 1/4),
+                labels = c("-1/2", "0", "1/2"),
+                #labels = c("-1/2", "0", expression("z"[0](infinity)), "1/2"),
+                limits = c(-1/2,1/2)) +
+              coord_fixed(xlim=c(0,1))
+
+            p3 = p3 +
+              annotate(geom = "text", label = "\u2212",
+                       x = 0.5,
+                       y = 0.35*c(-1,1), fontface =2,
+                       hjust = "center", vjust = "middle") +
+              annotate(geom = "text", label = "+",
+                       x = 0.5,
+                       y = 0, fontface =2,
+                       hjust = "center", vjust = "middle")
+
+            p3 = p3 +
+              geom_line(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y),
+                color = "black",
+                data = data.frame(x=t0, y=z0)
+              ) +
+              geom_point(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y,color=color),
+                color = color,
+                data = data.frame(x=t0, y=z0, color = color))
+            return(p3)
           } else {
             return(ggplot())
           }
@@ -681,8 +746,8 @@ test_that("videos and plots for moving in space output correctly", {
     library(ggh4x)
     output_folder_plots = "~/Documents/GitHub/ahstat.github.io/images/2023-6-11-Periodic-mixtures/plot3"
     sigma = 1
-    type = "polynomial"
-    for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts")) {
+    type = "gaussian"
+    for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian")) {
       dir.create(file.path(output_folder_plots, type), showWarnings = FALSE)
       subfolders = list.files(file.path(output_folder_plots, type))
       Zf = Zf_func(type, sigma)
@@ -813,7 +878,6 @@ test_that("videos and plots for moving in space output correctly", {
         limits_t_y = c(-1, 1.001)
       )
 
-
       params[["polynomial_two_shifts"]] = list(
         tmax = 2,
         length.out_z = 201,
@@ -836,6 +900,30 @@ test_that("videos and plots for moving in space output correctly", {
         minor_breaks_t_y = c(-1/2, 1/2),
         labels_t_y = c(-1, 0, 1),
         limits_t_y = c(-1, 1)
+      )
+
+      params[["gaussian"]] = list(
+        tmax = 1,
+        length.out_z = 201,
+        length.out_t = 201,
+        t0 = c(1e-3, 1/4, 1/3, 1),
+        color = c("gray", "#1ABC9C", "#FFC300", "#154360"),
+        geom_type = geom_line(),
+        breaks_z_x = c(0, 1/2, 1), # t
+        minor_breaks_z_x = c(1/4, 3/4),
+        labels_z_x = c(0, 1/2, 1),
+        breaks_z_y = c(-1, 0, 1, 2), # Zf
+        minor_breaks_z_y = c(),
+        labels_z_y = c(-1, 0, 1, 2),
+        limits_z_y = c(-1,2),
+
+        breaks_t_x = c(-1/2, 0, 1/2), # z
+        minor_breaks_t_x = c(-1/4, 1/4),
+        labels_t_x = c("-1/2", "0", "1/2"),
+        breaks_t_y = c(-1, 0, 1, 2), # Zf
+        minor_breaks_t_y = c(),
+        labels_t_y = c(-1, 0, 1, 2),
+        limits_t_y = c(-1, 2)
       )
       # End list of parameters for each type ----
 
@@ -928,6 +1016,7 @@ test_that("videos and plots for moving in space output correctly", {
         plot_Zf_single_t0s = function(z0, t0, color, t, z) {
           data = list()
           z_cur = z#[t <= t0]
+
           for(k in 1:length(t0)) {
             data[[k]] = data.frame(
               t = t0[k],
@@ -1175,6 +1264,72 @@ test_that("videos and plots for moving in space output correctly", {
                 color = color,
                 data = data.frame(x=t0, y=z0, color = color))
             return(p3)
+          } else if(grepl("gaussian", type)) {
+            curve_zeros_top = function(t) {
+              type = "gaussian"
+              sigma = 1
+              F_tz = Zf_func(type, sigma)
+              #t = seq(from = 0, to = 0.00001, length.out = 101)[-1]
+              z_interval = c(1e-8, 0.5)
+              res = get_roots(F_tz, t, z_interval)
+              return(res)
+            }
+
+            t = seq(from = 0, to = 2.5, length.out = 300)[-1]
+            df_poly = data.frame(
+              x = t,
+              ymin = -curve_zeros_top(t),
+              ymax = curve_zeros_top(t)
+            )
+            df_poly = rbind(
+              data.frame(x=0, ymin=0, ymax=0),
+              df_poly
+            )
+
+            p3 = ggplot(df_poly) +
+              geom_ribbon(aes(x = x, ymin= ymin, ymax = ymax), fill = "#EEEEEE", color = "darkgray") +
+              theme_bw() +
+              xlab("t") +
+              ylab("z") +
+              theme_bw() +
+              scale_x_continuous(
+                breaks = c(0, 1/2, 1),
+                minor_breaks = c(1/4, 3/4),
+                labels = c(0, 1/2, 1)) +
+              scale_y_continuous(
+                breaks = c(-1/2, 0, 1/2),
+                #breaks = c(-1/2, 0, 1/2-1/(2*sqrt(3)), 1/2),
+                minor_breaks = c(-1/4, 1/4),
+                labels = c("-1/2", "0", "1/2"),
+                #labels = c("-1/2", "0", expression("z"[0](infinity)), "1/2"),
+                limits = c(-1/2,1/2)) +
+              coord_fixed(xlim=c(0,1))
+
+            p3 = p3 +
+              annotate(geom = "text", label = "\u2212",
+                       x = 0.5,
+                       y = 0.35*c(-1,1), fontface =2,
+                       hjust = "center", vjust = "middle") +
+              annotate(geom = "text", label = "+",
+                       x = 0.5,
+                       y = 0, fontface =2,
+                       hjust = "center", vjust = "middle")
+
+            p3 = p3 +
+              geom_line(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y),
+                color = "black",
+                data = data.frame(x=t0, y=z0)
+              ) +
+              geom_point(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y,color=color),
+                color = color,
+                data = data.frame(x=t0, y=z0, color = color))
+            return(p3)
+          } else {
+            return(ggplot())
           }
         }
 
@@ -1793,6 +1948,14 @@ test_that("additional plot for the polynomial case roots and derivative roots ou
     # A^2-A*exp(-2*t)-1/2+exp(-4*t)/2 = 0
 
     root_deriv = function(z) {
+      # time t for which dZ/dt(z) = 0. There are 2 times for each z
+      # but there is at most only one time that is positive
+      # here to better understand:
+      #  zs = seq(from = -1/2, to = 1/2, length.out = 1000)
+      #  res = t(data.frame(sapply(zs, root_deriv)))
+      #  plot(zs, res[,1], type = "l", ylab = 't', xlab = 'z')
+      #  lines(zs, res[,2])
+      #  abline(h=0, lty="dashed")
       A = cos(2*pi*z)
       t1 = (1/2)*log((A-sqrt(1-A^2))/(2*A^2-1))
       t2 = (1/2)*log((A+sqrt(1-A^2))/(2*A^2-1))
@@ -2140,6 +2303,233 @@ test_that("additional plot for the polynomial_two_shifts case roots and derivati
   expect_true(0 == 0)
 })
 
+test_that("additional plot for the gaussian case roots and derivative roots output correctly", {
+  type = "gaussian"
+  output_folder_plots = "~/Documents/GitHub/ahstat.github.io/images/2023-6-11-Periodic-mixtures/plot3"
+  output_folder_plots_current = file.path(output_folder_plots, type, "roots_and_derivative_roots.png")
+
+  if(!file.exists(output_folder_plots_current)) {
+    z0 = 1/4 # root at t=+Inf and derivative root at t=+Inf
+
+    # for z0_root ----
+    z0_root = function(t) {
+      type = "gaussian"
+      sigma = 1
+      F_tz = Zf_func(type, sigma)
+      #t = seq(from = 0, to = 0.00001, length.out = 101)[-1]
+      z_interval = c(1e-8, 0.5)
+      res = get_roots(F_tz, t, z_interval)
+      return(res)
+    }
+    t = seq(from = 0, to = 2.5, length.out = 3000)[-1]
+    df_z0_t0 = data.frame(x = 0, ymin = 0, ymax = 0)
+    df_z0 = data.frame(x = t, ymin = -z0_root(t), ymax = z0_root(t))
+    df_z0 = rbind(df_z0_t0, df_z0)
+
+    # for z0_prim_root ----
+
+    Dt = function(t, z) { # gaussian
+      # dZ/dt(t) = -2*t*pi*sum_{k=2}^{+inf} (k^2-1)*exp(-pi*t^2*(k^2-1))*cos(2*k*pi*z)
+    }
+
+    derivative_root_gaussian_case = function() {
+      # Result the 4 branches for the Gaussian case
+
+      F_tz = function(t, z) {
+        # For the Gaussian case, the derivate w.r.t t is:
+        # dZ/dt(t) = -2*t*pi*sum_{k=2}^{+inf} (k^2-1)*exp(-pi*t^2*(k^2-1))*cos(2*k*pi*z)
+        # The equation dZ/dt(t) = 0 means solving:
+        # sum_{k=2}^{+inf} (k-1)*(k+1)*exp(-pi*t^2*(k-1)*(k+1))*cos(2*k*pi*z)
+        # We compute this sum with k_max=2000
+
+        k_max=2000 # useful for smaller values of t
+        k=2:k_max
+        sum((k-1)*(k+1)*exp(-pi*t^2*(k-1)*(k+1))*cos(2*k*pi*z))
+      }
+
+      # There are 4 branches, as for the polynomial case, but the roots are harder to isolate
+      branch1_t = c()
+      branch1_z = c()
+      branch2_t = c()
+      branch2_z = c()
+      branch3_t = c()
+      branch3_z = c()
+      branch4_t = c()
+      branch4_z = c()
+
+      ## Branch 1
+      plot=FALSE
+      # On t=(0.19, +inf):
+      z_interval = c(1e-8, 0.25)
+      t_range = seq(from = 0.2, to = 3, length.out = 3*182)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=plot)
+      #plot(t_range, res, type='l', ylim=c(-0.5,0.5), xlim = c(0, 2), ylab = 'z', xlab = 't') # found z is in [0.07245334, 0.12500000]
+      branch1_t = c(t_range, branch1_t)
+      branch1_z = c(res, branch1_z)
+
+      # before t=0.2
+      z_interval = c(1e-8, 0.10)
+      t_range = seq(from = 0.06, to = 0.2, length.out = 101)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=plot)
+      #lines(t_range, res, type='l') # found z is in [0.02423260, 0.07245334]
+      branch1_t = c(t_range, branch1_t)
+      branch1_z = c(res, branch1_z)
+
+      # before t=0.06
+      plot=FALSE
+      z_interval = c(1e-8, 0.03)
+      t_range = seq(from = 0.015, to = 0.06, length.out = 101)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=plot)
+      #lines(t_range, res, type='l') # found z is in [0.006159152, 0.023691071]
+      branch1_t = c(t_range, branch1_t)
+      branch1_z = c(res, branch1_z)
+
+      # before t=0.015
+      z_interval = c(1e-8, 0.0062)
+      t_range = seq(from = 0.005, to = 0.015, length.out = 101)
+      res = get_roots(F_tz, t_range, z_interval, plot=plot)
+      #lines(t_range, res, type='l') # found z is in [0.002176515 0.005980007]
+      branch1_t = c(t_range, branch1_t)
+      branch1_z = c(res, branch1_z)
+
+      plot(branch1_t, branch1_z, type = "l", ylim=c(-0.5,0.5), xlim = c(0, 2), ylab = 'z', xlab = 't')
+
+      ## Branch 2
+      z_interval = c(0.25, 0.5)
+      t_range = seq(from = 0.2, to = 3, length.out = 3*182)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=plot) # found z (range res) is in [0.2590959 0.3750000]
+      #lines(t_range, res, type='l')
+      branch2_t = c(t_range, branch2_t)
+      branch2_z = c(res, branch2_z)
+
+      plot=FALSE
+      z_interval = c(0.10, 0.26)
+      t_range = seq(from = 0.06, to = 0.20, length.out = 101)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=plot) # found z is in [0.1062951 0.2590959]
+      #lines(t_range, res, type='l')
+      branch2_t = c(t_range, branch2_t)
+      branch2_z = c(res, branch2_z)
+
+      z_interval = c(0.025, 0.11) # minimal took related to branc1, maximal relative to previous found z
+      t_range = seq(from = 0.015, to = 0.06, length.out = 101)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=FALSE) # found z is in [0.0325753 0.1042998]
+      #lines(t_range, res, type='l')
+      branch2_t = c(t_range, branch2_t)
+      branch2_z = c(res, branch2_z)
+
+
+      z_interval = c(0.006, 0.06)
+      t_range = seq(from = 0.005, to = 0.015, length.out = 101)
+      res = get_roots(F_tz, t_range, z_interval, plot=FALSE) # found z is in [0.0325753 0.1042998]
+      #lines(t_range, res, type='l')
+      branch2_t = c(t_range, branch2_t)
+      branch2_z = c(res, branch2_z)
+
+      lines(branch2_t, branch2_z)
+
+      # For the other branches, it is symmetric, no need to recompute
+      ## Branch 3
+      #z_interval = c(-0.5, -0.25)
+      #t_range = seq(from = 0.19, to = 2, length.out = 182)[-1]
+      #res = get_roots(F_tz, t_range, z_interval, plot=plot)
+      #lines(t_range, res, type='l')
+      ## Branch 4
+      #z_interval = c(-0.25, -1e-8)
+      #t_range = seq(from = 0.19, to = 2, length.out = 182)[-1]
+      #res = get_roots(F_tz, t_range, z_interval, plot=plot)
+      #lines(t_range, res, type='l')
+
+      branch3_t = branch1_t
+      branch4_t = branch2_t
+      branch3_z = -branch1_z
+      branch4_z = -branch2_z
+
+      lines(branch3_t, branch3_z)
+      lines(branch4_t, branch4_z)
+
+      # check that equal times
+      testthat::expect_equal(branch1_t, branch2_t)
+      testthat::expect_equal(branch1_t, branch3_t)
+      testthat::expect_equal(branch1_t, branch4_t)
+
+      return(data.frame(t=branch1_t, z1=branch1_z, z2=branch2_z, z3=branch3_z, z4=branch4_z))
+      #return(list(branch1_t=branch1_t, branch1_z=branch1_z,
+      #            branch2_t=branch2_t, branch2_z=branch2_z,
+      #            branch3_t=branch3_t, branch3_z=branch3_z,
+      #            branch4_t=branch4_t, branch4_z=branch4_z))
+    }
+
+    res = derivative_root_gaussian_case()
+    df_z0_prim0 = data.frame(t = 0, z1 = 0, z2 = 0, z3 = 0, z4 = 0)
+    df_z0_prim = res
+    df_z0_prim = rbind(df_z0_prim0, df_z0_prim)
+
+    # plot itself ----
+    p = ggplot() +
+      geom_ribbon(aes(x = x, ymin= ymin, ymax = ymax),
+                  data = df_z0,
+                  inherit.aes = FALSE,
+                  fill = "#EEEEEE", color = "darkgray") +
+      geom_line(aes(x = t, y = z1),
+                data = df_z0_prim,
+                inherit.aes = FALSE,
+                color = "orange") +
+      geom_line(aes(x = t, y = z2),
+                data = df_z0_prim,
+                inherit.aes = FALSE,
+                color = "orange") +
+      geom_line(aes(x = t, y = z3),
+                data = df_z0_prim,
+                inherit.aes = FALSE,
+                color = "orange") +
+      geom_line(aes(x = t, y = z4),
+                data = df_z0_prim,
+                inherit.aes = FALSE,
+                color = "orange") +
+      theme_bw() +
+      xlab("t") +
+      ylab("z") +
+      theme_bw() +
+      scale_x_continuous(
+        breaks = c(0, 1, 2, 4, 6, 8, 10),
+        minor_breaks = c(1/2, 3/2)) +
+      scale_y_continuous(
+        breaks = c(0, 0.1, 0.2, 0.3, 0.4),
+        minor_breaks = c(-0.05, 0.05, 0.15, 0.25, 0.35, 0.45),
+        limits = c(-1/2,1/2)) +
+      coord_cartesian(xlim=c(0,2), ylim=c(-0.05,0.45), clip="on")
+
+    p2 = p +
+      annotate(geom = "text", label = "\u2212↘",
+               x = 1,
+               y = 0.415, fontface =2,
+               hjust = "center", vjust = "middle") +
+      annotate(geom = "text", label = "\u2212↗",
+               x = 1,
+               y = 0.31, fontface =2,
+               hjust = "center", vjust = "middle") +
+      annotate(geom = "text", label = "+↗",
+               x = 1,
+               y = 0.18, fontface =2,
+               hjust = "center", vjust = "middle") +
+      annotate(geom = "text", label = "+↘",
+               x = 1,
+               y = 0, fontface =2,
+               hjust = "center", vjust = "middle") +
+      geom_point(data = data.frame(x=2.085, y=1/4), aes(x=x,y=y), color = "darkgray")+
+      geom_point(data = data.frame(x=2.085, y=3/8), aes(x=x,y=y), color="#FFC300")+
+      geom_point(data = data.frame(x=2.085, y=1/8), aes(x=x,y=y), color="#FFC300")+
+      #geom_point(data = data.frame(x=0, y=1/4), aes(x=x,y=y), color="#FFC300")+
+      geom_point(data = data.frame(x=0, y=0), aes(x=x,y=y), color="#FFC300")
+
+    p2
+
+    ggsave(filename = file.path(output_folder_plots_current),
+           plot = p2,
+           width = 196*2, height = 196, units = "px", dpi = 110) # larger dpi = larger font
+  }
+  expect_true(0 == 0)
+})
 
 
 

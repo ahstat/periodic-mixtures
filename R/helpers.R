@@ -249,3 +249,37 @@ maximum_number_to_str = function(l) {
   final_t = substr(t1, 1, max_t)
   return(c(final_t, final_z))
 }
+
+#' @export
+get_roots = function(F_tz,
+                     t_range = seq(from = 0, to = 0.5, length.out = 11)[-1],
+                     z_interval = c(1e-8, 0.5),
+                     precBits=NULL,
+                     plot=FALSE) {
+  # F_tz is F_tz(t,z)
+
+  z_range = list()
+  for(k in 1:length(t_range)) {
+    #print(k)
+    t = t_range[[k]]
+    if(!is.null(precBits)) {
+      t = mpfr(t, precBits = precBits)
+    }
+    f = function(z) {
+      F_tz(t, z)
+    }
+    if(plot) {
+      z_plot = seq(from=z_interval[1], z_interval[2], length.out=100)
+      f_plot = sapply(z_plot, f)
+      print(paste(f_plot[1], f_plot[-1]))
+      plot(z_plot, f_plot, ylab = "F_tz", xlab = "z", type = "l", main=t)
+    }
+    if(is.null(precBits)) {
+      z_range[[k]] = try(uniroot(f, z_interval, tol = .Machine$double.eps), silent=TRUE)$root
+    } else {
+      z_range[[k]] = try(unirootR(f, z_interval, tol = .Machine$double.eps), silent=TRUE)$root
+    }
+  }
+  z_range = do.call(c, z_range)
+  return(z_range)
+}

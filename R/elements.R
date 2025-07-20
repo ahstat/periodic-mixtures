@@ -23,7 +23,8 @@ build_f_g_Ff_Fg = function(type, sigma=NULL) {
 }
 
 #' Build f, g, Ff, and Fg functions according to the `f_g_Ff_Fg.R` file
-#' from scratch
+#' from scratch. This function is not used for now, but can be used for quickly
+#' checking a new function not present currently in `f_g_Ff_Fg.R`
 #'
 #' @param f function f taking any real `x` as input and giving `f(x)`
 #' @param g the derivative of f
