@@ -143,3 +143,99 @@ save_video_from_png_folder = function(my_folder,
                       framerate = framerate,
                       output = paste0(my_folder, ".mp4"))
 }
+
+#' Region with lobes for the sinc2 graph (used three times in test-dynamics.R)
+#'
+#' @param n_t number of t values in the [0,1] interval
+#' @param n_z number of z values in the [-0.5, 0.5] interval
+#' @returns the plot with the lobes for sinc2
+#' @export
+background_region_sinc2 = function(n_t=2000, n_z=2000, default = TRUE, t_min=0.003, t_max=1.0, z_min=-0.5, z_max=0.5) {
+  # --- Compute Z_t(z) = 2t * sum_{k=1}^{floor(1/t)} (1 - k*t) * cos(2*k*pi*z) ---
+  # Z_sincsq = function(t, z) {
+  #   N = floor(1/t)
+  #   if (N < 1) return(0)
+  #   k = 1:N
+  #   2 * t * sum((1 - k * t) * cos(2 * k * pi * z))
+  # }
+
+  # --- Build evaluation grid ---
+  t_vals = seq(t_min, t_max, length.out = n_t)
+  z_vals = seq(z_min, z_max, length.out = n_z)
+
+  # Vectorized computation (vectorize over z for each t)
+  Z_grid = matrix(0, nrow = n_t, ncol = n_z)
+  for (i in seq_along(t_vals)) {
+    tt = t_vals[i]
+    N = floor(1/tt)
+    if (N < 1) next
+    k = 1:N
+    weights = 1 - k * tt
+    # Vectorized: outer product gives (N x n_z) matrix of cos values
+    cos_mat = cos(2 * pi * outer(k, z_vals))
+    Z_grid[i, ] = 2 * tt * colSums(weights * cos_mat)
+  }
+
+  # --- Build data frame for raster fill (+ zones in gray) ---
+  df_grid = expand.grid(t = t_vals, z = z_vals)
+  df_grid$positive = as.vector(Z_grid) > 0
+
+  # --- Contour lines at Z = 0 ---
+  # Use contourLines from base R
+  cl = contourLines(t_vals, z_vals, Z_grid, levels = 0)
+  df_contour = do.call(rbind, lapply(seq_along(cl), function(i) {
+    data.frame(t = cl[[i]]$x, z = cl[[i]]$y, group = i)
+  }))
+
+  # --- Vertical band boundaries ---
+  N_max_band = min(floor(1/min(t_vals)), 200)
+  t_boundaries = 1 / (2:N_max_band)
+  t_boundaries = t_boundaries[t_boundaries >= min(t_vals) & t_boundaries <= max(t_vals)]
+
+  # --- Plot ---
+  p = ggplot() +
+    # Gray fill for positive zones
+    geom_raster(
+      data = df_grid[df_grid$positive, ],
+      aes(x = t, y = z),
+      fill = "#EEEEEE"
+    ) +
+    # Zero contour curves
+    geom_path(
+      data = df_contour,
+      aes(x = t, y = z, group = group),
+      color = "darkgray", linewidth = 0.5
+    )
+
+  if(default) {
+    p = p +
+      # Band boundary vertical lines
+      #geom_vline(
+      #  xintercept = t_boundaries,
+      #  color = "darkgray", linewidth = 0.2, alpha = 0.3
+      #) +
+      # Labels
+      annotate("text", x = 0.375, y = 0, label = "+",
+               fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+      annotate("text", x = 0.375, y = 0.4, label = "\u2212",
+               fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+      annotate("text", x = 0.375, y = -0.4, label = "\u2212",
+               fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+      theme_bw() +
+      xlab("t") +
+      ylab("z") +
+      scale_x_continuous(
+        breaks = c(0, 1/2, 1),
+        minor_breaks = c(1/4, 3/4),
+        labels = c("0", "1/2", "1")
+      ) +
+      scale_y_continuous(
+        breaks = c(-1/2, 0, 1/2),
+        minor_breaks = c(-1/4, 1/4),
+        labels = c("-1/2", "0", "1/2"),
+        limits = c(-1/2, 1/2)
+      ) +
+      coord_fixed(xlim = c(0, 1))
+  }
+  p
+}

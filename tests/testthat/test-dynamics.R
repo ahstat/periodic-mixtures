@@ -57,20 +57,34 @@ or not fulfilled, for the Linear type", {
 
 test_that("Zf obtained from the direct form is the same as the one obtained from Sf_closed", {
   step = 1/2^0 # tested with 1/2^4
-  for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian")) {
+  for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian", "gaussian_one_shift", "sinc", "sinc2")) {
     for(sigma in c(1/4, 1/2, 1, 2)) {
       f = Zf_func(type, sigma)
       g = Zf_func_from_Sf_closed_func(type, sigma)
       # t_max = 4 to include two periods for the Rectangular type,
       # and 4 periods for the Linear type
-      if(type != "gaussian") {
-        check_equal_tz_func(f, g, step = step, z_range = c(-2, 2), t_max = 4)
-      } else {
+      if(type == "gaussian") {
         # there are numerical issues in Zf_func_from_Sf_closed_func for t>3,
         # but it looks fine for t>3 using Zf_func directly
         check_equal_tz_func(f, g, step = step, z_range = c(-2, 2), t_max = 3, tol = 1e-4)
+      } else {
+        # debug if needed for a single z (check the results in the Rplots.pdf in tests/testthat/)
+        if(type == "sinc") {
+          z = 0.1
+          t = seq(from = 0.1, to = 2, by = 0.01)
+          predicted = sapply(t, function(t){f(t, z)})
+          groundtruth = sapply(t, function(t){g(t, z)})
+          plot(t, groundtruth, col = 'blue', main = type)
+          lines(t, predicted, col = 'red')
+        }
+        # z = 0.0
+        # t = seq(from = 0.1, to = 2, by = 0.01)
+        # predicted = sapply(t, function(t){f(t, z)})
+        # groundtruth = sapply(t, function(t){g(t, z)})
+        # plot(t, groundtruth, col = 'blue', main = type)
+        # lines(t, predicted, col = 'red')
+        check_equal_tz_func(f, g, step = step, z_range = c(-2, 2), t_max = 4)
       }
-
     }
   }
 })
@@ -258,16 +272,88 @@ test_that("videos and plots for moving in time output correctly", {
 
       breaks_z_x = c(0, 1/2, 1), # time
       minor_breaks_z_x = c(1/4, 3/4),
-      labels_z_x = c(0, 1, 2),
+      labels_z_x = c(0, 1/2, 1),
       breaks_z_y = c(-1, 0, 1, 2), # Zf
       minor_breaks_z_y = c(),
       labels_z_y = c(-1, 0, 1, 2),
       limits_z_y = c(-999,999), # limits_z_y = c(-999,999)
       xlab_z = "t"
     )
+
+    params[["gaussian_one_shift"]] = list(
+      tmax = 1,
+      length.out_z = 201,
+      length.out_t = 201,
+      z0 = c(-1/2, -1/4, -1/6, 0.001, 1/6, 1/4, 1/2),
+      color = c("#154360", "#1ABC9C", "#FFC300", "gray", "#FFC300", "#1ABC9C", "#154360"),
+      geom_type = geom_line(),
+      breaks = c(-1, 0, 1, 2), # Zf
+      minor_breaks = c(),
+      labels = c(-1, 0, 1, 2),
+      limits = c(-999,999), # limits = c(-999,999)
+      char_t_name = " t=",
+      percent_x = 15/100,
+
+      breaks_z_x = c(0, 1/2, 1), # time
+      minor_breaks_z_x = c(1/4, 3/4),
+      labels_z_x = c(0, 1/2, 1),
+      breaks_z_y = c(-1, 0, 1, 2), # Zf
+      minor_breaks_z_y = c(),
+      labels_z_y = c(-1, 0, 1, 2),
+      limits_z_y = c(-999,999), # limits_z_y = c(-999,999)
+      xlab_z = "t"
+    )
+
+    params[["sinc"]] = list(
+      tmax = 1,
+      length.out_z = 201,
+      length.out_t = 201,
+      z0 = c(-1/2, -1/4, -1/6, 1e-8, 1/6, 1/4, 1/2),
+      color = c("#154360", "#1ABC9C", "#FFC300", "gray", "#FFC300", "#1ABC9C", "#154360"),
+      geom_type = geom_line(),
+      breaks = c(-1, 0, 1, 2), # Zf
+      minor_breaks = c(),
+      labels = c(-1, 0, 1, 2),
+      limits = c(-1,1), # limits = c(-999,999)
+      char_t_name = "    t=",
+      percent_x = 15/100,
+
+      breaks_z_x = c(0, 1/2, 1), # time
+      minor_breaks_z_x = c(1/4, 3/4),
+      labels_z_x = c(0, 1/2, 1),
+      breaks_z_y = c(-1, 0, 1, 2), # Zf
+      minor_breaks_z_y = c(),
+      labels_z_y = c(-1, 0, 1, 2),
+      limits_z_y = c(-1,1), # limits_z_y = c(-999,999)
+      xlab_z = "t"
+    )
+
+    params[["sinc2"]] = list(
+      tmax = 1,
+      length.out_z = 201,
+      length.out_t = 201,
+      z0 = c(-1/2, -1/4, -1/6, 1e-8, 1/6, 1/4, 1/2),
+      color = c("#154360", "#1ABC9C", "#FFC300", "gray", "#FFC300", "#1ABC9C", "#154360"),
+      geom_type = geom_line(),
+      breaks = c(-1, 0, 1, 2), # Zf
+      minor_breaks = c(),
+      labels = c(-1, 0, 1, 2),
+      limits = c(-1,1), # limits = c(-999,999)
+      char_t_name = "    t=",
+      percent_x = 15/100,
+
+      breaks_z_x = c(0, 1/2, 1), # time
+      minor_breaks_z_x = c(1/4, 3/4),
+      labels_z_x = c(0, 1/2, 1),
+      breaks_z_y = c(-1, 0, 1, 2), # Zf
+      minor_breaks_z_y = c(),
+      labels_z_y = c(-1, 0, 1, 2),
+      limits_z_y = c(-1,1), # limits_z_y = c(-999,999)
+      xlab_z = "t"
+    )
     # End list of parameters for each type ----
 
-    for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian")) {
+    for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian", "gaussian_one_shift", "sinc", "sinc2")) {
       dir.create(file.path(output_folder_plots, type), showWarnings = FALSE)
       subfolders = list.files(file.path(output_folder_plots, type))
       Zf = Zf_func(type, sigma)
@@ -361,10 +447,12 @@ test_that("videos and plots for moving in time output correctly", {
 
         plot_Zf_single_z0s = function(z0, t0, color, t, z, type) {
           data = list()
-          if(type != "gaussian") {
-            t_cur = c(0, t)#[t <= t0]
-          } else {
+          if(grepl("gaussian", type)) {
             t_cur = t
+          } else if(grepl("sinc", type)) {
+            t_cur = t
+          } else {
+            t_cur = c(0, t)#[t <= t0]
           }
 
           # k = 2
@@ -615,7 +703,7 @@ test_that("videos and plots for moving in time output correctly", {
                 color = color,
                 data = data.frame(x=t0, y=z0, color = color))
             return(p3)
-          }  else if(grepl("gaussian", type)) {
+          } else if(grepl("gaussian", type)) {
             curve_zeros_top = function(t) {
               type = "gaussian"
               sigma = 1
@@ -679,6 +767,173 @@ test_that("videos and plots for moving in time output correctly", {
                 color = color,
                 data = data.frame(x=t0, y=z0, color = color))
             return(p3)
+          } else if(type == "sinc") {
+            N_max = 51 # to increase
+            # N_max = 201
+
+            # --- Helper: get + intervals for a given N ---
+            get_plus_zones = function(N) {
+              zeros = c()
+              for (k in 1:(N-1)) {
+                z = 2 * k / (N - 1)
+                if (z > 0 && z < 0.5) zeros = c(zeros, z)
+              }
+              for (k in 0:(N-1)) {
+                z = (2 * k + 1) / (N + 1)
+                if (z > 0 && z < 0.5) zeros = c(zeros, z)
+              }
+              zeros = sort(zeros)
+              bounds = c(0, zeros, 0.5)
+              plus = list()
+              for (i in seq(1, length(bounds) - 1, by = 2)) {
+                plus[[length(plus) + 1]] = c(bounds[i], bounds[i + 1])
+              }
+              list(zeros = zeros, plus = plus)
+            }
+
+            sign_at = function(z, plus) {
+              for (p in plus) {
+                if (z > p[1] && z < p[2]) return(TRUE)
+              }
+              return(FALSE)
+            }
+
+            # --- 1) Build + zone fill rectangles ---
+            df_fill = data.frame(tmin=numeric(), tmax=numeric(), zmin=numeric(), zmax=numeric())
+
+            N_vals = seq(3, N_max, by = 2)
+            for (N in N_vals) {
+              t_lo = 1 / (N + 1)
+              t_hi = 1 / (N - 1)
+              info = get_plus_zones(N)
+              for (p in info$plus) {
+                df_fill = rbind(df_fill, data.frame(tmin=t_lo, tmax=t_hi, zmin=p[1], zmax=p[2]))
+                df_fill = rbind(df_fill, data.frame(tmin=t_lo, tmax=t_hi, zmin=-p[2], zmax=-p[1]))
+              }
+            }
+
+            # --- 2) Horizontal boundary segments (at zeros within each band) ---
+            df_horiz = data.frame(t1=numeric(), t2=numeric(), z=numeric())
+            for (N in N_vals) {
+              print(N)
+              t_lo = 1 / (N + 1)
+              t_hi = 1 / (N - 1)
+              info = get_plus_zones(N)
+              for (z00 in info$zeros) {
+                df_horiz = rbind(df_horiz, data.frame(t1=t_lo, t2=t_hi, z=z00))
+                df_horiz = rbind(df_horiz, data.frame(t1=t_lo, t2=t_hi, z=-z00))
+              }
+            }
+
+            # --- 3) Vertical boundary segments (at t-band edges where sign changes) ---
+            df_vert = data.frame(t=numeric(), z1=numeric(), z2=numeric())
+
+            # At t = 1/2: boundary between N=3 zone and O zone
+            # N=3 has + on (0,1/4) and - on (1/4,1/2), both differ from O
+            df_vert = rbind(df_vert, data.frame(t=0.5, z1=0, z2=0.5))
+            df_vert = rbind(df_vert, data.frame(t=0.5, z1=-0.5, z2=0))
+
+            for (idx in 1:(length(N_vals) - 1)) {
+              N_curr = N_vals[idx]
+              N_next = N_vals[idx + 1]
+              t_boundary = 1 / (N_curr + 1)
+
+              info_curr = get_plus_zones(N_curr)
+              info_next = get_plus_zones(N_next)
+
+              # Union of all breakpoints
+              all_breaks = sort(unique(c(0, 0.5,
+                                         unlist(info_curr$plus), unlist(info_next$plus))))
+
+              for (i in 1:(length(all_breaks) - 1)) {
+                mid = (all_breaks[i] + all_breaks[i + 1]) / 2
+                s_curr = sign_at(mid, info_curr$plus)
+                s_next = sign_at(mid, info_next$plus)
+                if (s_curr != s_next) {
+                  df_vert = rbind(df_vert, data.frame(t=t_boundary, z1=all_breaks[i], z2=all_breaks[i+1]))
+                  df_vert = rbind(df_vert, data.frame(t=t_boundary, z1=-all_breaks[i+1], z2=-all_breaks[i]))
+                }
+              }
+            }
+
+            # --- Plot ---
+            p = ggplot() +
+              # Gray fill for all + zones (no border)
+              geom_rect(
+                data = df_fill,
+                aes(xmin = tmin, xmax = tmax, ymin = zmin, ymax = zmax),
+                fill = "#EEEEEE", color = NA
+              ) +
+              # Horizontal boundaries
+              geom_segment(
+                data = df_horiz,
+                aes(x = t1, xend = t2, y = z, yend = z),
+                color = "darkgray", linewidth = 0.5
+              ) +
+              # Vertical boundaries
+              geom_segment(
+                data = df_vert,
+                aes(x = t, xend = t, y = z1, yend = z2),
+                color = "darkgray", linewidth = 0.5
+              ) +
+              # Labels
+              annotate("text", x = 0.75, y = 0, label = "0",
+                       fontface = 1, size = 4, hjust = "center", vjust = "middle") +
+              annotate("text", x = 0.375, y = 0, label = "+",
+                       fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+              annotate("text", x = 0.375, y = 0.4, label = "\u2212",
+                       fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+              annotate("text", x = 0.375, y = -0.4, label = "\u2212",
+                       fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+              theme_bw() +
+              xlab("t") +
+              ylab("z") +
+              scale_x_continuous(
+                breaks = c(0, 1/4, 1/2, 1),
+                minor_breaks = c(),
+                labels = c("0", "1/4", "1/2", "1")
+              ) +
+              scale_y_continuous(
+                breaks = c(-1/2, 0, 1/2),
+                minor_breaks = c(-1/4, 1/4),
+                labels = c("-1/2", "0", "1/2"),
+                limits = c(-1/2, 1/2)
+              ) +
+              coord_fixed(xlim = c(0, 1))
+
+            p3 = p
+
+            p3 = p3 +
+              geom_line(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y),
+                color = "black",
+                data = data.frame(x=t0, y=z0)
+              ) +
+              geom_point(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y,color=color),
+                color = color,
+                data = data.frame(x=t0, y=z0, color = color))
+            return(p3)
+          } else if(type == "sinc2") {
+            n_t=2000
+            n_z=2000
+            p3 = background_region_sinc2(n_t, n_z)
+
+            p3 = p3 +
+              geom_line(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y),
+                color = "black",
+                data = data.frame(x=t0, y=z0)
+              ) +
+              geom_point(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y,color=color),
+                color = color,
+                data = data.frame(x=t0, y=z0, color = color))
+            return(p3)
           } else {
             return(ggplot())
           }
@@ -707,6 +962,9 @@ test_that("videos and plots for moving in time output correctly", {
           } else if(type == "gaussian") {
             p1 = p1 + coord_cartesian(ylim = c(-1,2))
             p2 = p2 + coord_cartesian(ylim = c(-1,2))
+          } else if(type %in% c("gaussian_one_shift")) {
+            p1 = p1 + coord_cartesian(ylim = c(-1,1))
+            p2 = p2 + coord_cartesian(ylim = c(-1,1))
           }
 
           p1 = p1 + theme(axis.title.y = element_text(vjust=-2, margin=margin(-15,0,0,0)))
@@ -747,7 +1005,7 @@ test_that("videos and plots for moving in space output correctly", {
     output_folder_plots = "~/Documents/GitHub/ahstat.github.io/images/2023-6-11-Periodic-mixtures/plot3"
     sigma = 1
     type = "gaussian"
-    for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian")) {
+    for(type in c("rectangular", "linear", "exponential", "polynomial", "polynomial_one_shift", "polynomial_two_shifts", "gaussian", "gaussian_one_shift", "sinc", "sinc2")) {
       dir.create(file.path(output_folder_plots, type), showWarnings = FALSE)
       subfolders = list.files(file.path(output_folder_plots, type))
       Zf = Zf_func(type, sigma)
@@ -924,6 +1182,77 @@ test_that("videos and plots for moving in space output correctly", {
         minor_breaks_t_y = c(),
         labels_t_y = c(-1, 0, 1, 2),
         limits_t_y = c(-1, 2)
+      )
+
+      params[["gaussian_one_shift"]] = list(
+        tmax = 1,
+        length.out_z = 201,
+        length.out_t = 201,
+        t0 = c(1e-3, 1/4, 1/2, 1),
+        color = c("gray", "#1ABC9C", "#FFC300", "#154360"),
+        geom_type = geom_line(),
+        breaks_z_x = c(0, 1/2, 1), # t
+        minor_breaks_z_x = c(1/4, 3/4),
+        labels_z_x = c(0, 1/2, 1),
+        breaks_z_y = c(-1, 0, 1), # Zf
+        minor_breaks_z_y = c(),
+        labels_z_y = c(-1, 0, 1),
+        limits_z_y = c(-1,1),
+
+        breaks_t_x = c(-1/2, 0, 1/2), # z
+        minor_breaks_t_x = c(-1/4, 1/4),
+        labels_t_x = c("-1/2", "0", "1/2"),
+        breaks_t_y = c(-1, 0, 1), # Zf
+        minor_breaks_t_y = c(),
+        labels_t_y = c(-1, 0, 1),
+        limits_t_y = c(-1, 1)
+      )
+
+      params[["sinc"]] = list(
+        tmax = 1,
+        length.out_z = 201,
+        length.out_t = 201,
+        t0 = c(1e-3, 1/4, 1/2, 1),
+        color = c("gray", "#1ABC9C", "#FFC300", "#154360"),
+        geom_type = geom_line(),
+        breaks_z_x = c(0, 1/2, 1), # t
+        minor_breaks_z_x = c(1/4, 3/4),
+        labels_z_x = c(0, 1/2, 1),
+        breaks_z_y = c(-1, 0, 1), # Zf
+        minor_breaks_z_y = c(),
+        labels_z_y = c(-1, 0, 1),
+        limits_z_y = c(-1,1),
+
+        breaks_t_x = c(-1/2, 0, 1/2), # z
+        minor_breaks_t_x = c(-1/4, 1/4),
+        labels_t_x = c("-1/2", "0", "1/2"),
+        breaks_t_y = c(-1, 0, 1), # Zf
+        minor_breaks_t_y = c(),
+        labels_t_y = c(-1, 0, 1),
+        limits_t_y = c(-1, 1)
+      )
+      params[["sinc2"]] = list(
+        tmax = 1,
+        length.out_z = 201,
+        length.out_t = 201,
+        t0 = c(1e-3, 1/4, 1/2, 1),
+        color = c("gray", "#1ABC9C", "#FFC300", "#154360"),
+        geom_type = geom_line(),
+        breaks_z_x = c(0, 1/2, 1), # t
+        minor_breaks_z_x = c(1/4, 3/4),
+        labels_z_x = c(0, 1/2, 1),
+        breaks_z_y = c(-1, 0, 1), # Zf
+        minor_breaks_z_y = c(),
+        labels_z_y = c(-1, 0, 1),
+        limits_z_y = c(-1,1),
+
+        breaks_t_x = c(-1/2, 0, 1/2), # z
+        minor_breaks_t_x = c(-1/4, 1/4),
+        labels_t_x = c("-1/2", "0", "1/2"),
+        breaks_t_y = c(-1, 0, 1), # Zf
+        minor_breaks_t_y = c(),
+        labels_t_y = c(-1, 0, 1),
+        limits_t_y = c(-1, 1)
       )
       # End list of parameters for each type ----
 
@@ -1328,6 +1657,176 @@ test_that("videos and plots for moving in space output correctly", {
                 color = color,
                 data = data.frame(x=t0, y=z0, color = color))
             return(p3)
+          } else if(type == "sinc") {
+            N_max = 51 # to increase
+            # N_max = 201
+
+            # --- Helper: get + intervals for a given N ---
+            get_plus_zones = function(N) {
+              zeros = c()
+              for (k in 1:(N-1)) {
+                z = 2 * k / (N - 1)
+                if (z > 0 && z < 0.5) zeros = c(zeros, z)
+              }
+              for (k in 0:(N-1)) {
+                z = (2 * k + 1) / (N + 1)
+                if (z > 0 && z < 0.5) zeros = c(zeros, z)
+              }
+              zeros = sort(zeros)
+              bounds = c(0, zeros, 0.5)
+              plus = list()
+              for (i in seq(1, length(bounds) - 1, by = 2)) {
+                plus[[length(plus) + 1]] = c(bounds[i], bounds[i + 1])
+              }
+              list(zeros = zeros, plus = plus)
+            }
+
+            sign_at = function(z, plus) {
+              for (p in plus) {
+                if (z > p[1] && z < p[2]) return(TRUE)
+              }
+              return(FALSE)
+            }
+
+            # --- 1) Build + zone fill rectangles ---
+            df_fill = data.frame(tmin=numeric(), tmax=numeric(), zmin=numeric(), zmax=numeric())
+
+            N_vals = seq(3, N_max, by = 2)
+            for (N in N_vals) {
+              t_lo = 1 / (N + 1)
+              t_hi = 1 / (N - 1)
+              info = get_plus_zones(N)
+              for (p in info$plus) {
+                df_fill = rbind(df_fill, data.frame(tmin=t_lo, tmax=t_hi, zmin=p[1], zmax=p[2]))
+                df_fill = rbind(df_fill, data.frame(tmin=t_lo, tmax=t_hi, zmin=-p[2], zmax=-p[1]))
+              }
+            }
+
+            # --- 2) Horizontal boundary segments (at zeros within each band) ---
+            df_horiz = data.frame(t1=numeric(), t2=numeric(), z=numeric())
+            for (N in N_vals) {
+              print(N)
+              t_lo = 1 / (N + 1)
+              t_hi = 1 / (N - 1)
+              info = get_plus_zones(N)
+              for (z00 in info$zeros) {
+                df_horiz = rbind(df_horiz, data.frame(t1=t_lo, t2=t_hi, z=z00))
+                df_horiz = rbind(df_horiz, data.frame(t1=t_lo, t2=t_hi, z=-z00))
+              }
+            }
+
+            # --- 3) Vertical boundary segments (at t-band edges where sign changes) ---
+            df_vert = data.frame(t=numeric(), z1=numeric(), z2=numeric())
+
+            # At t = 1/2: boundary between N=3 zone and O zone
+            # N=3 has + on (0,1/4) and - on (1/4,1/2), both differ from O
+            df_vert = rbind(df_vert, data.frame(t=0.5, z1=0, z2=0.5))
+            df_vert = rbind(df_vert, data.frame(t=0.5, z1=-0.5, z2=0))
+
+            for (idx in 1:(length(N_vals) - 1)) {
+              N_curr = N_vals[idx]
+              N_next = N_vals[idx + 1]
+              t_boundary = 1 / (N_curr + 1)
+
+              info_curr = get_plus_zones(N_curr)
+              info_next = get_plus_zones(N_next)
+
+              # Union of all breakpoints
+              all_breaks = sort(unique(c(0, 0.5,
+                                         unlist(info_curr$plus), unlist(info_next$plus))))
+
+              for (i in 1:(length(all_breaks) - 1)) {
+                mid = (all_breaks[i] + all_breaks[i + 1]) / 2
+                s_curr = sign_at(mid, info_curr$plus)
+                s_next = sign_at(mid, info_next$plus)
+                if (s_curr != s_next) {
+                  df_vert = rbind(df_vert, data.frame(t=t_boundary, z1=all_breaks[i], z2=all_breaks[i+1]))
+                  df_vert = rbind(df_vert, data.frame(t=t_boundary, z1=-all_breaks[i+1], z2=-all_breaks[i]))
+                }
+              }
+            }
+
+            # --- Plot ---
+            p = ggplot() +
+              # Gray fill for all + zones (no border)
+              geom_rect(
+                data = df_fill,
+                aes(xmin = tmin, xmax = tmax, ymin = zmin, ymax = zmax),
+                fill = "#EEEEEE", color = NA
+              ) +
+              # Horizontal boundaries
+              geom_segment(
+                data = df_horiz,
+                aes(x = t1, xend = t2, y = z, yend = z),
+                color = "darkgray", linewidth = 0.5
+              ) +
+              # Vertical boundaries
+              geom_segment(
+                data = df_vert,
+                aes(x = t, xend = t, y = z1, yend = z2),
+                color = "darkgray", linewidth = 0.5
+              ) +
+              # Labels
+              annotate("text", x = 0.75, y = 0, label = "0",
+                       fontface = 1, size = 4, hjust = "center", vjust = "middle") +
+              annotate("text", x = 0.375, y = 0, label = "+",
+                       fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+              annotate("text", x = 0.375, y = 0.4, label = "\u2212",
+                       fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+              annotate("text", x = 0.375, y = -0.4, label = "\u2212",
+                       fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+              theme_bw() +
+              xlab("t") +
+              ylab("z") +
+              scale_x_continuous(
+                breaks = c(0, 1/4, 1/2, 1),
+                minor_breaks = c(),
+                labels = c("0", "1/4", "1/2", "1")
+              ) +
+              scale_y_continuous(
+                breaks = c(-1/2, 0, 1/2),
+                minor_breaks = c(-1/4, 1/4),
+                labels = c("-1/2", "0", "1/2"),
+                limits = c(-1/2, 1/2)
+              ) +
+              coord_fixed(xlim = c(0, 1))
+
+            p3 = p
+
+            p3 = p3 +
+              geom_line(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y),
+                color = "black",
+                data = data.frame(x=t0, y=z0)
+              ) +
+              geom_point(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y,color=color),
+                color = color,
+                data = data.frame(x=t0, y=z0, color = color))
+            return(p3)
+
+
+          } else if(type == "sinc2") {
+            n_t=2000
+            n_z=2000
+            p3 = background_region_sinc2(n_t, n_z)
+            p3 = p3 +
+              geom_line(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y),
+                color = "black",
+                data = data.frame(x=t0, y=z0)
+              ) +
+              geom_point(
+                inherit.aes = FALSE,
+                mapping = aes(x=x,y=y,color=color),
+                color = color,
+                data = data.frame(x=t0, y=z0, color = color))
+            return(p3)
+
+
           } else {
             return(ggplot())
           }
@@ -1452,9 +1951,54 @@ test_that("videos and plots for moving in time unnormalized output correctly", {
       text_t = "σ/λ="
     )
 
+    params[["gaussian"]] = list(
+      tmax = 1,
+      length.out_z = 60001,
+      length.out_t = 301,
+      breaks_x = c(-1/2, 0, 1/2),
+      minor_breaks_x = c(-1/4, 1/4),
+      labels_x = c("-λ/2", "0", "λ/2"),
+      percent_x = 19/100,
+      breaks_y = c(-1, 0, 1),
+      minor_breaks_y = c(-1/2, 1/2, 3/2, 2),
+      labels_y = c("1/λ-(2/λ)×\ne^(-πσ²/λ²)", "1/λ ", "1/λ+(2/λ)×\ne^(-πσ²/λ²)\n"), # ²
+      limits_y = c(-1,2),
+      text_t = "σ/λ="
+    )
+
+    params[["sinc"]] = list(
+      tmax = 1,
+      length.out_z = 60001,
+      length.out_t = 301,
+      breaks_x = c(-1/2, 0, 1/2),
+      minor_breaks_x = c(-1/4, 1/4),
+      labels_x = c("-λ/2", "0", "λ/2"),
+      percent_x = 19/100,
+      breaks_y = c(-1, 0, 1),
+      minor_breaks_y = c(-1/2, 1/2),
+      labels_y = c("1/λ-1/σ", "1/λ ", "1/λ+1/σ"), # ²
+      limits_y = c(-1,1),
+      text_t = "σ/λ="
+    )
+
+    params[["sinc2"]] = list(
+      tmax = 1,
+      length.out_z = 60001,
+      length.out_t = 301,
+      breaks_x = c(-1/2, 0, 1/2),
+      minor_breaks_x = c(-1/4, 1/4),
+      labels_x = c("-λ/2", "0", "λ/2"),
+      percent_x = 19/100,
+      breaks_y = c(-1/2, 0, 1),
+      minor_breaks_y = c(1/2),
+      labels_y = c("1/λ-1/(2σ)", "1/λ", "1/λ+1/σ"), # ²
+      limits_y = c(-1/2,1),
+      text_t = "σ/λ="
+    )
+
     # End list of parameters for each type ----
 
-    for(type in c("rectangular", "linear", "exponential", "polynomial")) {
+    for(type in c("rectangular", "linear", "exponential", "polynomial", "gaussian", "sinc", "sinc2")) {
       dir.create(file.path(output_folder_plots, type), showWarnings = FALSE)
       subfolders = list.files(file.path(output_folder_plots, type))
       Zf = Zf_func(type, sigma)
@@ -1543,7 +2087,7 @@ test_that("videos and plots for moving in time unnormalized output correctly", {
         for(k in 1:N) {
           t0 = t[k]
           ylab_name = expression("S"[λ]*"f"[σ]*"(x)")
-          if(type == "polynomial") {
+          if((type == "polynomial")|(type == "gaussian")) {
             ylab_name = expression("S"[λ]*"f"[σ]*"(x)       ")
           }
           p = plot_Zf_single_t0(t0, t, z, type, add_t = TRUE) + xlab("x") + ylab(ylab_name)
@@ -2527,6 +3071,234 @@ test_that("additional plot for the gaussian case roots and derivative roots outp
     ggsave(filename = file.path(output_folder_plots_current),
            plot = p2,
            width = 196*2, height = 196, units = "px", dpi = 110) # larger dpi = larger font
+  }
+  expect_true(0 == 0)
+})
+
+test_that("additional plot for the gaussian_one_shift case roots and derivative roots output correctly", {
+  type = "gaussian_one_shift"
+  output_folder_plots = "~/Documents/GitHub/ahstat.github.io/images/2023-6-11-Periodic-mixtures/plot3"
+  output_folder_plots_current = file.path(output_folder_plots, type, "roots_and_derivative_roots.png")
+
+  if(!file.exists(output_folder_plots_current)) {
+    z0 = 1/4 # root at t=+Inf and derivative root at t=+Inf
+
+    # for z0_root ----
+    z0_root = function(t) {
+      type = "gaussian_one_shift"
+      sigma = 1
+      F_tz = Zf_func(type, sigma)
+      #t = seq(from = 0, to = 0.00001, length.out = 101)[-1]
+      z_interval = c(1e-8, 0.5)
+      res = get_roots(F_tz, t, z_interval)
+      return(res)
+    }
+    t = seq(from = 0, to = 2.5, length.out = 3000)[-1]
+    df_z0_t0 = data.frame(x = 0, ymin = 0, ymax = 0)
+    df_z0 = data.frame(x = t, ymin = -z0_root(t), ymax = z0_root(t))
+    df_z0 = rbind(df_z0_t0, df_z0)
+
+    # for z0_prim_root ----
+
+    Dt = function(t, z) { # gaussian_one_shift
+      # dZ/dt(t) =  2*pi*t*sum_{k=1}^{+inf} (exp(pi*t^2)*(1 - k^2) + k^2) * exp(-pi*k^2*t^2) * cos(2*k*pi*z))
+    }
+
+    derivative_root_gaussian_case = function() {
+
+      F_tz = function(t, z) {
+        # For the Gaussian case (with shift), the derivate w.r.t t is:
+        # dZ/dt(t) = 2*pi*t*sum_{k=1}^{+inf} (exp(pi*t^2)*(1 - k^2) + k^2) * exp(-pi*k^2*t^2) * cos(2*k*pi*z))
+        # The equation dZ/dt(t) = 0 means solving:
+        # sum_{k=1}^{+inf} (exp(pi*t^2)*(1 - k^2) + k^2) * exp(-pi*k^2*t^2) * cos(2*k*pi*z))
+        # We compute this sum with k_max=2000
+        k_max=2000 # useful for smaller values of t
+        k=1:k_max
+        sum((exp(pi*t^2) * (1 - k^2) + k^2) * exp(-pi*k^2*t^2) * cos(2*k*pi*z))
+      }
+
+      # There are 2 branches
+      branch1_t = c()
+      branch1_z = c()
+      branch2_t = c()
+      branch2_z = c()
+
+      ## Branch 1
+      plot = FALSE
+      z_interval = c(1e-8, 0.5)
+      t_range = seq(from = 0.001, to = 3, length.out = 1000)[-1] # length.out = 3*182)[-1]
+      res = get_roots(F_tz, t_range, z_interval, plot=plot) # found z (range res) is in [0.2590959 0.3750000]
+      branch1_t = c(t_range, branch1_t)
+      branch1_z = c(res, branch1_z)
+      plot(branch1_t, branch1_z, type='l', ylim=c(-0.5,0.5), xlim = c(0, 2), ylab = 'z', xlab = 't')
+
+      # For the other branch, it is symmetric, no need to recompute
+      branch2_t = branch1_t
+      branch2_z = -branch1_z
+
+      return(data.frame(t=branch1_t, z1=branch1_z, z2=branch2_z))
+    }
+
+    res = derivative_root_gaussian_case()
+    df_z0_prim0 = data.frame(t = 0, z1 = 0, z2 = 0)
+    df_z0_prim = res
+    df_z0_prim = rbind(df_z0_prim0, df_z0_prim)
+
+    # plot itself ----
+    p = ggplot() +
+      geom_ribbon(aes(x = x, ymin= ymin, ymax = ymax),
+                  data = df_z0,
+                  inherit.aes = FALSE,
+                  fill = "#EEEEEE", color = "darkgray") +
+      geom_line(aes(x = t, y = z1),
+                data = df_z0_prim,
+                inherit.aes = FALSE,
+                color = "orange") +
+      geom_line(aes(x = t, y = z2),
+                data = df_z0_prim,
+                inherit.aes = FALSE,
+                color = "orange") +
+      theme_bw() +
+      xlab("t") +
+      ylab("z") +
+      theme_bw() +
+      scale_x_continuous(
+        breaks = c(0, 1, 2, 4, 6, 8, 10),
+        minor_breaks = c(1/2, 3/2)) +
+      scale_y_continuous(
+        breaks = c(0, 0.1, 0.2, 0.3, 0.4),
+        minor_breaks = c(-0.05, 0.05, 0.15, 0.25, 0.35, 0.45),
+        limits = c(-1/2,1/2)) +
+      coord_cartesian(xlim=c(0,2), ylim=c(-0.05,0.45), clip="on")
+
+    p2 = p +
+      annotate(geom = "text", label = "\u2212↘",
+               x = 1,
+               y = 0.35, fontface =2,
+               hjust = "center", vjust = "middle") +
+      annotate(geom = "text", label = "\u2212↗",
+               x = 0.435,
+               y = 0.25, fontface =2,
+               hjust = "center", vjust = "middle") +
+      annotate(geom = "text", label = "+↗",
+               x = 1,
+               y = 0.1, fontface =2,
+               hjust = "center", vjust = "middle") +
+      #annotate(geom = "text", label = "+↘",
+      #         x = 1,
+      #         y = 0, fontface =2,
+      #         hjust = "center", vjust = "middle") +
+      geom_point(data = data.frame(x=2.085, y=1/4), aes(x=x,y=y), color = "darkgray")+
+      geom_point(data = data.frame(x=2.085, y=1/4), aes(x=x,y=y), color="#FFC300")+
+      geom_point(data = data.frame(x=0, y=0), aes(x=x,y=y), color="#FFC300")
+
+    p2
+
+    ggsave(filename = file.path(output_folder_plots_current),
+           plot = p2,
+           width = 196*2, height = 196, units = "px", dpi = 110) # larger dpi = larger font
+  }
+  expect_true(0 == 0)
+})
+
+test_that("additional plot with lobes for sinc2", {
+  type = "sinc2"
+  output_folder_plots = "~/Documents/GitHub/ahstat.github.io/images/2023-6-11-Periodic-mixtures/plot3"
+  output_folder_plots_current = file.path(output_folder_plots, type, "lobes.png")
+
+  find_lobe_extremity = function(N_boundary) {
+    # Find extremity of the m-th lobe
+    # Pattern: lobe m has its cusp at t = 1/N_m where N_m is the band boundary
+    # where the zero count jumps from (2m-1) to (2m+1).
+    # z* satisfies sin^2(N_m * pi * z) = N_m * sin^2(pi * z)
+
+    # z* is the largest root of sin^2(N*pi*z) = N*sin^2(pi*z)
+    # that lies in the lobe region (small z)
+    f = function(z) sin(N_boundary * pi * z)^2 - N_boundary * sin(pi * z)^2
+
+    # Find all roots in (0, 0.5) by scanning
+    z_grid = seq(1e-6, 0.5, length.out = 100000)
+    vals = f(z_grid)
+    roots = c()
+    for (i in 1:(length(vals)-1)) {
+      if (vals[i] * vals[i+1] < 0) {
+        roots = c(roots, uniroot(f, c(z_grid[i], z_grid[i+1]))$root)
+      }
+    }
+
+    # The lobe extremity is the 3rd root (for lobe 1), 5th (for lobe 2), etc.
+    list(t_star = 1/N_boundary, z_star = roots, all_roots = roots)
+  }
+
+  if(!file.exists(output_folder_plots_current)) {
+    t_max=0.07
+    n_t=3000
+    n_z=3000
+    p2 = background_region_sinc2(n_t, n_z, default = FALSE, t_min=0.0001, t_max=t_max, z_min=-0.5, z_max=0.5)
+
+    res = find_lobe_extremity(21)
+    t0 = res$t_star
+    z0 = tail(res$z_star, 1)
+
+    res = find_lobe_extremity(61)
+    t1 = res$t_star
+    z1 = tail(res$z_star, 1)
+
+    res = find_lobe_extremity(120)
+    t2 = res$t_star
+    z2 = tail(res$z_star, 1)
+
+    res = find_lobe_extremity(199)
+    t3 = res$t_star
+    z3 = tail(res$z_star, 1)
+
+    p2 = p2 +
+      #annotate("text", x = 0.375, y = 0, label = "+",
+      #         fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+      #annotate("text", x = 0.375, y = 0.4, label = "\u2212",
+      #         fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+      #annotate("text", x = 0.375, y = -0.4, label = "\u2212",
+      #         fontface = 2, size = 5, hjust = "center", vjust = "middle") +
+      theme_bw() +
+      xlab("t") +
+      ylab("z") +
+      #scale_x_continuous(
+      #  breaks = c(0, 1/2, 1),
+      #  minor_breaks = c(1/4, 3/4),
+      #  labels = c("0", "1/2", "1")
+      #) +
+      #scale_y_continuous(
+      #  breaks = c(-1/2, 0, 1/2),
+      #  minor_breaks = c(-1/4, 1/4),
+      #  labels = c("-1/2", "0", "1/2"),
+      #  limits = c(-1/2, 1/2)
+      #) +
+      coord_fixed(xlim = c(0, t_max), ylim = c(0, t_max))
+
+    p2 = p2 + geom_point(data = data.frame(x=t0, y=z0), aes(x=x,y=y), color="#FFC300") +
+      geom_point(data = data.frame(x=t1, y=z1), aes(x=x,y=y), color = "darkgray") +
+      geom_point(data = data.frame(x=t2, y=z2), aes(x=x,y=y), color = "darkgray") +
+      geom_point(data = data.frame(x=t3, y=z3), aes(x=x,y=y), color = "darkgray")
+    ggsave(filename = file.path(output_folder_plots_current),
+           plot = p2,
+           width = 196*2, height = 196*2, units = "px", dpi = 110) # larger dpi = larger font
+
+    # zoom
+
+    n_t=2000
+    n_z=2000
+    output_folder_plots_current_zoom1 = file.path(output_folder_plots, type, "lobes_zoom.png")
+    p2 = background_region_sinc2(n_t, n_z, default = FALSE, t_min=0.04, t_max=0.05, z_min=0.06, z_max=0.07)
+    p2 = p2 + theme_bw() + xlab("t") + ylab("z") + coord_fixed(xlim = c(0.04, 0.05), ylim = c(0.06, 0.07))
+    p2 = p2 + geom_point(data = data.frame(x=t0, y=z0), aes(x=x,y=y), color="#FFC300")
+    # t0 = 0.04761905 ; z0 = 0.06936655
+    p2 = p2 + geom_point(data = data.frame(x=0.047788119925, y=0.068377056869), aes(x=x,y=y), color="#154360")
+
+
+    ggsave(filename = file.path(output_folder_plots_current_zoom1), plot = p2,
+           width = 196*2, height = 196*2, units = "px", dpi = 110) # larger dpi = larger font
+
+
   }
   expect_true(0 == 0)
 })

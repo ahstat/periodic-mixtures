@@ -27,7 +27,18 @@ scaling_term_func = function(t, sigma, type) {
     # == normalization `~t in 0`
     return((exp(2*t)-1-2*t)/(2*t)*sigma)
   } else if(type == "gaussian") {
+    # normalization (exp(pi*t^2)/(2*t))*sigma
+    # == normalization `dominant term` (gives ~1/(2t) in 0) (yes, same as poly)
     return((exp(pi*t^2)/(2*t))*sigma)
+  } else if(type == "gaussian_one_shift") {
+    # normalization (exp(pi*t^2-1)/(2*t))*sigma
+    # == normalization `at least ~t in 0`
+    # (not only bounded; hence no need to check another normalization)
+    return((exp(pi*t^2)-1)/(2*t)*sigma)
+  } else if(type == "sinc") {
+    return(sigma)
+  } else if(type == "sinc2") {
+    return(sigma)
   }
 }
 
@@ -58,7 +69,9 @@ Zf_func_from_Sf_closed_func = function(type, sigma) {
   # z Current normalized position in space (z in R)
   function(t, z) {
     # normalization in time
-    type0 = ifelse(grepl("polynomial", type), "polynomial", type)
+    type0 = type
+    type0 = ifelse(grepl("polynomial", type0), "polynomial", type0)
+    type0 = ifelse(grepl("gaussian", type0), "gaussian", type0)
     Zf1 = sapply(t, normalization_in_space_and_time_from_Sf_closed_func, z, sigma, type0)
     # normalization in space
     lambda = sigma/t
@@ -158,39 +171,81 @@ Zf_func = function(type, sigma) {
     return(function(t, z) {
       # version 3:
       sapply(t, function(t){Re((exp(pi*t^2)/2)*(jacobi::jtheta3(z = pi*z, q = exp(-pi*t^2))-1))})
-#       # normalization (exp(pi*t^2)/(2*t))*sigma
-#       # Zf = cos(2*pi*z) + sum_{k=2}^{+inf} exp(-pi*t^2*(k^2-1))*cos(2*k*pi*z)
-#       maxiter = 3e4
-#
-#       # Debug code:
-#       # z=0
-#       # t=seq(from = 0.3, to = 5, length.out = 1000)[-1]
-#
-#       # Version 1: Not stable from t = 3:
-#       # out = theta3(z = pi*z, q = exp(-pi*t^2), maxiter = maxiter)
-#       # v1 = (out - 1)*exp(pi*t^2)/2
-#
-#       # Version 2: Stable even for t > 3
-#       out = cos(2*pi*z)
-#       out_previous = -2
-#
-#       q = exp(-pi*t^2)
-#       for (k in 2:maxiter) {
-#         out_new = out + q^(k^2-1) * cos(2*k*pi*z)
-#         if(elliptic::near.match(out, out_new) & k >= 5 & elliptic::near.match(out, out_previous)) {
-#           return(out)
-#         }
-#
-#         out_previous = out
-#         out = out_new
-#       }
-#       return(NA) # maximum iterations reached
-#       # Debug code: compare v1 and v2 over time
-#       # v2 = out
-#       # plot(t, v1, type = "l")
-#       # lines(t, v2, col = "red")
-#       # plot(t, v1-v2, type = "l")
+      #       # normalization (exp(pi*t^2)/(2*t))*sigma
+      #       # Zf = cos(2*pi*z) + sum_{k=2}^{+inf} exp(-pi*t^2*(k^2-1))*cos(2*k*pi*z)
+      #       maxiter = 3e4
+      #
+      #       # Debug code:
+      #       # z=0
+      #       # t=seq(from = 0.3, to = 5, length.out = 1000)[-1]
+      #
+      #       # Version 1: Not stable from t = 3:
+      #       # out = theta3(z = pi*z, q = exp(-pi*t^2), maxiter = maxiter)
+      #       # v1 = (out - 1)*exp(pi*t^2)/2
+      #
+      #       # Version 2: Stable even for t > 3
+      #       out = cos(2*pi*z)
+      #       out_previous = -2
+      #
+      #       q = exp(-pi*t^2)
+      #       for (k in 2:maxiter) {
+      #         out_new = out + q^(k^2-1) * cos(2*k*pi*z)
+      #         if(elliptic::near.match(out, out_new) & k >= 5 & elliptic::near.match(out, out_previous)) {
+      #           return(out)
+      #         }
+      #
+      #         out_previous = out
+      #         out = out_new
+      #       }
+      #       return(NA) # maximum iterations reached
+      #       # Debug code: compare v1 and v2 over time
+      #       # v2 = out
+      #       # plot(t, v1, type = "l")
+      #       # lines(t, v2, col = "red")
+      #       # plot(t, v1-v2, type = "l")
     })
+  } else if(type == "gaussian_one_shift") {
+    return(function(t, z) {
+      sapply(t, function(t){(1/2)*(exp(pi*t^2)-1)*Re(jacobi::jtheta3(z = pi*z, q = exp(-pi*t^2))-1)})
+    })
+  } else if(type == "sinc") {
+    return(
+      function(t, z) {
+        # normalization sigma
+
+        # first formula (complex in 0)
+        #out = sapply(t, function(t){t*(sin(pi*z*(2*floor(1/(2*t))+1))/sin(pi*z) - 1)})
+        #if(sum(is.nan(out)) > 0) {
+        #  out[is.nan(out)] = (2*t*floor(1/(2*t)))[is.nan(out)]
+        #}
+        #return(out)
+
+        # but there is easier, from the proof of Sf for sinc:
+        # S - 1/lambda = (2/lambda)*sum_{k=1}^{floor(lambda/(2sigma))} cos(2 pi k x/lambda)
+        #              = (1/sigma)*2*t*sum_{k=1}^{floor(1/(2t))} cos(2 k pi z)
+        # so with N=sigma:
+        # Zf = 2*t*sum_{k=1}^{floor(1/(2t))} cos(2 k pi z)
+        # to go t=0.0001 we need 5000 terms
+        sapply(t, function(t){if(t>1/2) {
+            return(0)
+          } else {
+            return(sapply(z, function(z){2*t*sum(cos(2*(1:floor(1/(2*t)))*pi*z))})) # normalization sigma
+            #return(sapply(z, function(z){2*sum(cos(2*(1:floor(1/(2*t)))*pi*z))})) # normalization lambda discarded, not good shape
+          }})
+
+        # The derivative w.r.t t is: dZf/dt = 0 with:
+        #   sum_{k=1}^{k_max} cos(2 k pi z) = 0
+      }
+    )
+  } else if(type == "sinc2") {
+    function(t, z) {
+    sapply(t, function(t){if(t > 1) {
+      return(0)
+    } else {
+      N <- floor(1/t)
+      return(sapply(z, function(z){2*t*sum((1 - (1:N)*t) * cos(2*(1:N)*pi*z))}))
+    }})
+    }
   } else {
     stop("Zf closed-form is not defined for this type in Zf_func")
   }
